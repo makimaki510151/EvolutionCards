@@ -310,7 +310,7 @@ export const ALL_CARDS = [
 /**
  * カードの指定されたレベルにおける効果（テキストと値）のリストを取得する。
  * @param {object} card - カードオブジェクト
- * @param {number} level - 取得したい進化レベル (0, 1, 2)
+ * @param {number} level - 取得したい進化レベル (0, 1, 2, ...)
  * @returns {Array<{description: string, value: number, type: string}>} - 効果データ配列
  */
 export function getCardEffectData(card, level) {
@@ -341,7 +341,7 @@ export function getCardEffectData(card, level) {
 /**
  * カードの効果をまとめたテキストを生成する。（既存関数）
  * @param {object} card - カードオブジェクト
- * @param {number} level - 取得したい進化レベル (0, 1, 2)
+ * @param {number} level - 取得したい進化レベル (0, 1, 2, ...)
  * @returns {string} - 効果テキストの文字列
  */
 export function generateFullEffectText(card, level) {
@@ -361,7 +361,8 @@ export function generateFullEffectText(card, level) {
  * @returns {string} - 効果テキストのHTML文字列
  */
 export function generateEffectText(card) {
-    const currentLevel = card.evolution || card.baseEvolution || 0;
+    // 🌟 修正: card.evolutionを優先し、未定義の場合はcard.baseEvolution、それでも未定義の場合は0をデフォルトとする
+    const currentLevel = card.evolution !== undefined ? card.evolution : (card.baseEvolution !== undefined ? card.baseEvolution : 0);
     const maxEvo = getCardMaxEvolution(card); // 🌟 カードごとの最大レベルを取得
     const displayLevel = currentLevel + 1;
     const maxDisplayLevel = maxEvo + 1;
@@ -382,17 +383,21 @@ export function generateEffectText(card) {
 
 /**
  * カードの進化ロジックを定義し、適用する。
- * @param {object} card - 進化させるカードオブジェクト
+ * @param {object} card - 進化させるカードオブジェクト (インスタンス)
  * @returns {object} - 進化後のカードオブジェクト
  */
 export function applyEvolution(card) {
-    const maxEvo = getCardMaxEvolution(card); // 🌟 MAXレベルを取得
+    // 🌟 変更: card.baseIdからALL_CARDSの情報を取得し、maxEvolutionを確実に参照
+    const cardBase = ALL_CARDS.find(c => c.id === card.baseId);
+    const maxEvo = getCardMaxEvolution(cardBase || card); // 念のためフォールバック
 
-    if (card.evolution < maxEvo) {
-        card.evolution++;
-    } else if (card.baseEvolution < maxEvo) {
-        // baseEvolutionを使用しているカードに対するフォールバック
-        card.baseEvolution++;
+    // 🌟 変更: card.evolutionが存在し、かつmaxEvo未満の場合のみインクリメント
+    // baseEvolutionは初期設定にのみ使用し、進化はevolutionプロパティで行う
+    const currentEvolution = card.evolution !== undefined ? card.evolution : (card.baseEvolution || 0);
+
+    if (currentEvolution < maxEvo) {
+        // 🌟 変更なし: 選ばれたカードは常にレベルが1上がる（今回はレベル差を付けるロジックは導入しない）
+        card.evolution = currentEvolution + 1;
     }
 
     return card;

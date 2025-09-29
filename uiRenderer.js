@@ -25,7 +25,9 @@ export function updateDisplay() {
     $scoreInfo.textContent = gameState.currentScore;
     $targetScore.textContent = gameState.targetScore;
     $stageInfo.textContent = gameState.stage;
-    $useCount.textContent = gameState.maxCardUses - gameState.cardsUsedThisTurn;
+    // 🌟 修正: コスト無視中はカード使用回数の表示を調整
+    const displayUses = gameState.costIgnoreCount > 0 ? '∞' : (gameState.maxCardUses - gameState.cardsUsedThisTurn);
+    $useCount.textContent = displayUses;
     $deckCount.textContent = gameState.deck.length;
     $discardCount.textContent = gameState.discard.length;
 
@@ -133,6 +135,7 @@ export function showEvolutionScreen() {
 
 export function renderEvolutionChoices() {
     $evolutionChoices.innerHTML = ''; // 既存の選択肢をクリア
+    document.getElementById('evo-count').textContent = gameState.evolutionPhase.count; // 🌟 選択肢再描画時にカウントも更新
 
     // masterCardListのインスタンス（進化レベル表示用）をbaseIdでグループ化
     const evolvableCardInstances = {};
@@ -166,14 +169,15 @@ export function renderEvolutionChoices() {
         // 🚨 修正点 3: クリックイベントリスナーを追加 (最重要: ゲーム進行ロジック)
         cardWrapper.addEventListener('click', async () => {
             if (!gameState.evolutionPhase.active) return;
+            // MAXレベルのカードはクリック不可
+            if (cardEl.classList.contains('used')) return; 
 
             // baseCardにはgameCore.js側の修正でbaseIdが設定されている
             await selectEvolutionCard(baseCard);
 
-            // 進化後もフェーズが続く場合（残り回数がある場合）は候補を再描画
+            // 🌟 修正: selectEvolutionCard内で画面を閉じる処理が入るため、ここでは残り回数がある場合のみ再描画する
             if (gameState.evolutionPhase.active) {
                 renderEvolutionChoices();
-                document.getElementById('evo-count').textContent = gameState.evolutionPhase.count;
             }
         });
 
