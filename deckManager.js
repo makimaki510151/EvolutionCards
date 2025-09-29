@@ -9,13 +9,16 @@ import { showDeckManagementScreen } from './main.js';
 const STORAGE_KEY_DECKS = 'roguelite_decks';
 const MAX_DECK_SIZE = 20; // デッキの最大枚数
 
-const INITIAL_DECK_TEMPLATE = {
-    name: "初期デッキ",
+export const INITIAL_DECK_TEMPLATE = {
+    name: "初心者デッキ (改)",
     cards: [
-        { id: 'score_1', count: 10 },
-        { id: 'score_2', count: 5 },
-        { id: 'combo_x2', count: 3 },
-        { id: 'combo_ignore', count: 2 },
+        { id: 'score_1', count: 8 },         // 8枚
+        { id: 'score_2', count: 4 },         // 4枚
+        { id: 'new_score_3', count: 2 },     // 2枚 (新規: 集中点)
+        { id: 'new_draw_low', count: 2 },    // 2枚 (新規: 調査 - スコア付きドロー)
+        { id: 'combo_x2', count: 2 },        // 2枚
+        { id: 'combo_ignore', count: 1 },    // 1枚
+        { id: 'new_max_use_add', count: 1 }, // 1枚 (新規: 機動 - 使用回数増加)
     ]
 };
 

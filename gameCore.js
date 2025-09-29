@@ -2,7 +2,8 @@
 
 import { getSelectedDeck } from './deckManager.js'; 
 import { updateDisplay, renderHand, showGameOverScreen, showEvolutionScreen } from './uiRenderer.js';
-import { applyEvolution, ALL_CARDS } from './cards.js';
+// 🌟 変更点1: getCardEffectData をインポートに追加
+import { applyEvolution, ALL_CARDS, getCardEffectData } from './cards.js'; 
 
 // --- ゲーム状態の定義 ---
 export let gameState = {
@@ -192,97 +193,141 @@ function checkStageCompletion() {
 }
 
 /**
- * カードの効果ロジックを実装。Multiplierを全ての数値効果に適用。
+ * カード効果の適用ロジック (🌟 新規追加)
  * @param {object} card - 使用するカードオブジェクト
+ * @param {function} shuffle - gameCore.js内で定義されているシャッフル関数
  */
-function applyCardEffects(card) {
+function applyEffects(card, shuffle) {
     const currentLevel = card.evolution || card.baseEvolution || 0;
-    
-    const currentMultiplier = gameState.nextScoreMultiplier; 
-    
-    let isNewMultiplierSet = false;
-    let effectConsumed = false;
+    // cards.jsから効果データを取得
+    const effectData = getCardEffectData(card, currentLevel); 
 
-    card.effects.forEach(effect => {
-        const valueKey = Object.keys(effect.params)[0]; 
-        const values = effect.params[valueKey];
-        let value = values[Math.min(currentLevel, values.length - 1)];
-        
-        if (effect.type === 'Multiplier') {
-            // 倍化カードの効果: 次の倍率を乗算する
-            gameState.nextScoreMultiplier *= value;
-            isNewMultiplierSet = true;
-        }
-        
-        // Multiplier効果自身を除き、Score, Draw, CostIgnoreの**全ての数値**に、乗算前の現在の倍率を適用
-        if (effect.type !== 'Multiplier') {
-            value = Math.floor(value * currentMultiplier); 
-        }
+    // PurgeSelfで使用するmasterCardListからの削除用インスタンスID
+    const cardInstanceId = card.id;
+    
+    // 捨札に送るべきかどうかを判断するためのフラグ (PurgeSelfの場合にfalseにする)
+    let shouldDiscard = true;
 
-        if (effect.type === 'CostIgnore') {
-            gameState.costIgnoreCount += value;
-            effectConsumed = true; 
-        } else if (effect.type === 'Score') {
-            gameState.currentScore += value; 
-            effectConsumed = true;
-        } else if (effect.type === 'Draw') {
-            if (value > 0) {
-                drawCard(value); 
-                effectConsumed = true;
-            }
+    effectData.forEach(effect => {
+        const value = effect.value;
+        const type = effect.type;
+
+        switch (type) {
+            case 'Score':
+                // スコア効果はMultiplierの対象
+                gameState.currentScore += Math.round(value * gameState.nextScoreMultiplier);
+                gameState.nextScoreMultiplier = 1; // 倍率リセット
+                break;
+
+            case 'Draw':
+                drawCard(value);
+                break;
+
+            case 'Multiplier':
+                gameState.nextScoreMultiplier = value;
+                break;
+
+            case 'CostIgnore':
+                gameState.costIgnoreCount += value;
+                break;
+            
+            // --- 新規効果ロジック ---
+
+            case 'PurgeSelf':
+                // PurgeSelf: masterCardListからこのカードインスタンスを永久に削除
+                gameState.masterCardList = gameState.masterCardList.filter(c => c.id !== cardInstanceId);
+                // スコア効果（purgeScoreとして定義）
+                gameState.currentScore += value;
+                shouldDiscard = false; // このカードは捨て札に行かない
+                break;
+            
+            case 'CardUseMod':
+                // CardUseMod: 残り使用回数に加算 (cardsUsedThisTurnを減らす)
+                gameState.cardsUsedThisTurn = Math.max(0, gameState.cardsUsedThisTurn - value); 
+                break;
+
+            case 'RetrieveDiscard':
+                // RetrieveDiscard: 捨て札からランダムに指定枚数を手札に戻す
+                for (let i = 0; i < value; i++) {
+                    if (gameState.discard.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * gameState.discard.length);
+                        const retrievedCard = gameState.discard.splice(randomIndex, 1)[0];
+                        gameState.hand.push(retrievedCard);
+                    } else {
+                        break;
+                    }
+                }
+                break;
+            
+            case 'ShuffleDiscard':
+                // ShuffleDiscard: 捨て札を山札に戻してシャッフル
+                if (gameState.discard.length > 0) {
+                    gameState.deck = gameState.deck.concat(gameState.discard);
+                    gameState.discard = [];
+                    // shuffleはファイルの冒頭で定義されたローカル関数
+                    shuffle(gameState.deck); 
+                }
+                break;
+
+            case 'DiscardHand':
+                // DiscardHand: 手札からランダムに指定枚数を捨てる (一時しのぎのペナルティなどで使用)
+                for (let i = 0; i < value; i++) {
+                    if (gameState.hand.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * gameState.hand.length);
+                        const discardedCard = gameState.hand.splice(randomIndex, 1)[0];
+                        gameState.discard.push(discardedCard);
+                    } else {
+                        break;
+                    }
+                }
+                // 手札をレンダリングし直す
+                renderHand();
+                break;
+
+            default:
+                console.warn(`Unknown effect type: ${type}`);
         }
     });
-    
-    // Score, Draw, CostIgnore のいずれかの効果が適用され、かつこのカードでMultiplierを設定していない場合、倍率をリセット
-    if (effectConsumed && !isNewMultiplierSet) {
-        gameState.nextScoreMultiplier = 1; 
-    }
+
+    return shouldDiscard;
 }
 
-
 /**
- * カード使用時のロジック
+ * カード使用処理 (🌟 新規または置き換え)
  * @param {object} card - 使用するカードオブジェクト
+ * @param {number} index - 手札におけるインデックス
  */
-export function useCard(card) {
+export function useCard(card, index) {
     if (gameState.evolutionPhase.active) return;
 
-    const isCostIgnored = gameState.costIgnoreCount > 0;
-    
-    if (!isCostIgnored && gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
-        return;
-    }
-
-    // 🌟 カード効果を適用
-    applyCardEffects(card); 
-
-    // 🌟 修正2: 効果適用直後にステージ達成をチェックし、達成していればターン中断
-    if (checkStageCompletion()) {
-        // ステージ達成した場合、以降の処理（使用枚数カウント、ターン終了チェック）は不要
-        return;
-    }
-
-    // カードを手札から捨て札へ
-    const cardIndex = gameState.hand.findIndex(c => c === card);
-    if (cardIndex !== -1) {
-        const usedCard = gameState.hand.splice(cardIndex, 1)[0];
-        gameState.discard.push(usedCard);
-    }
-    
-    // 使用枚数カウントのロジック
-    if (isCostIgnored) {
-        gameState.costIgnoreCount--; 
+    // 1. コスト計算
+    const costIgnored = gameState.costIgnoreCount > 0;
+    if (!costIgnored) {
+        if (gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
+            alert("これ以上カードは使えません。ターンを終了してください。");
+            return;
+        }
+        gameState.cardsUsedThisTurn++;
     } else {
-        gameState.cardsUsedThisTurn++; 
+        gameState.costIgnoreCount--;
+    }
+
+    // 2. 手札からカードを削除
+    // DiscardHandの処理があるため、先に削除する
+    gameState.hand.splice(index, 1);
+    
+    // 3. 効果適用 (shuffle関数はgameCore.jsのローカル関数としてapplyEffectsに渡す)
+    const shouldDiscard = applyEffects(card, shuffle); 
+
+    // 4. 捨て札へ移動 (PurgeSelf効果でshouldDiscardがfalseになった場合は移動しない)
+    if (shouldDiscard) {
+        gameState.discard.push(card);
     }
     
+    // 5. ステージ達成チェックと表示更新
+    checkStageCompletion();
     renderHand();
     updateDisplay();
-
-    // カード使用回数の上限に達した場合
-    if (gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
-        endTurn();
-    }
 }
 
 /**
