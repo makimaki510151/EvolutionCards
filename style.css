@@ -711,13 +711,30 @@ button:not(:disabled):hover {
 }
 
 #game-container header {
-    display: flex; /* 🌟 変更: flexで要素を配置 */
-    justify-content: space-between; /* 要素を両端に配置 */
+    display: flex;
+    /* 🌟 変更: 要素を両端に配置 */
+    justify-content: space-between;
     align-items: center;
     padding: 10px 20px;
-    background-color: var(--primary-bg-color);
-    border-bottom: 2px solid var(--border-color);
+    background-color: var(--secondary-bg-color);
+    border-bottom: 2px solid var(--accent-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
+/* 🌟 新規: 各情報ブロックのスタイル */
+.game-info-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px 10px;
+    background-color: var(--primary-bg-color);
+    border-radius: 6px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+    min-width: 120px;
+    /* ある程度の幅を確保 */
+    text-align: center;
+}
+
 
 /* 🌟 新規: ゲーム破棄ボタンのスタイル */
 #quit-game-button {
@@ -737,5 +754,90 @@ button:not(:disabled):hover {
 }
 
 #quit-game-button:hover {
-    background-color: #d32f2f; /* 少し暗い赤 */
+    background-color: #d32f2f;
+    /* 少し暗い赤 */
+}
+
+/* スコアとステージの情報は中央に配置されたままにして、ターン情報のみ右に寄せる */
+#score-info,
+#stage-info,
+#turn-info {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--text-color);
+    /* 🌟 変更: game-info-block の内側に入るのでこのマージンは削除 */
+    /* margin: 0 15px; */
+}
+
+/* スコア情報とターン情報を視覚的に際立たせる */
+#score-info {
+    order: 1;
+    /* 左端に配置 */
+}
+
+#stage-info {
+    order: 2;
+    /* 中央に配置 */
+    font-size: 1.4em;
+    /* ステージを少し大きく */
+    color: var(--primary-button-bg);
+}
+
+#turn-info {
+    order: 3;
+    /* 右端に配置 */
+}
+
+/* 🌟 新規: 各情報ブロックの間隔を確保 (既存のスタイル定義にマージンを追加) */
+#score-info,
+#stage-info,
+#turn-info {
+    /* 既存のスタイルを維持しつつ、左右マージンで間隔を広げる */
+    margin: 0 30px;
+    /* 30px に設定することで視覚的な間隔を広げる */
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+/* 🌟 新規: ゲーム破棄ボタンの右マージンを調整し、スコア情報との間隔を広げる */
+#quit-game-button {
+    /* 破壊的な操作であることを示す色 (danger-color) */
+    background-color: var(--danger-color);
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    /* flexアイテムの並び順を最初にし、他の要素との間に自動マージンを設定 */
+    order: -1;
+    margin-right: 30px;
+    /* auto から 30px に変更し、スペースを確保 */
+}
+
+#quit-game-button:hover {
+    background-color: #d32f2f;
+    /* 少し暗い赤 */
+}
+
+/* スコア情報とターン情報を視覚的に際立たせる (既存のorder設定を維持) */
+#score-info {
+    order: 1;
+    /* 左端に配置 */
+}
+
+#stage-info {
+    order: 2;
+    /* 中央に配置 */
+    font-size: 1.4em;
+    /* ステージを少し大きく */
+    color: var(--primary-button-bg);
+}
+
+#turn-info {
+    order: 3;
+    /* 右端に配置 */
 }
