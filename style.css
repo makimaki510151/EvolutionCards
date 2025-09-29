@@ -167,13 +167,15 @@ footer {
     text-align: center;
     width: 80%;
     max-width: 500px;
-    margin: 50px auto; /* 中央寄せ */
+    margin: 50px auto;
+    /* 中央寄せ */
 }
 
 /* タイトル画面 */
 #title-screen h1 {
     font-size: 2.5em;
-    color: #ffd700; /* ゴールド */
+    color: #ffd700;
+    /* ゴールド */
     margin-bottom: 40px;
 }
 
@@ -193,7 +195,8 @@ footer {
 }
 
 #deck-management-screen button:last-of-type {
-    background-color: #6c757d; /* 戻るボタン */
+    background-color: #6c757d;
+    /* 戻るボタン */
 }
 
 /* デッキリストのスタイル */
@@ -203,10 +206,31 @@ footer {
     border-radius: 5px;
     margin-bottom: 10px;
     text-align: left;
+    /* 🌟 修正: display: flex から display: block または flex-direction: column に変更 */
+    /* display: flex; を削除または以下に変更 */
     display: flex;
+    /* 親要素としてはflexを維持 */
+    flex-direction: column;
+    /* 内容物を縦並びにする */
     justify-content: space-between;
-    align-items: center;
+    /* 削除 */
+    align-items: flex-start;
+    /* 左寄せに変更 */
     background-color: #444;
+}
+
+.deck-item>div:first-child {
+    /* デッキ名と枚数表示のコンテナ */
+    margin-bottom: 10px;
+    /* ボタンとの間にスペースを追加 */
+}
+
+/* 🌟 追加: デッキ操作ボタンのコンテナ (横並びを実現) */
+.deck-actions {
+    display: flex;
+    /* ボタンを横並びにする */
+    gap: 10px;
+    /* ボタン間にスペース */
 }
 
 .deck-item input[type="radio"] {
@@ -220,11 +244,13 @@ footer {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.9); /* 少し濃い背景 */
+    background-color: rgba(0, 0, 0, 0.9);
+    /* 少し濃い背景 */
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 110; /* 他のオーバーレイより前面 */
+    z-index: 110;
+    /* 他のオーバーレイより前面 */
 }
 
 /* カード編集リストのスタイル */
@@ -272,19 +298,24 @@ footer {
     background-color: #555;
     cursor: not-allowed;
 }
+
 #current-deck-size span.size-over {
-    color: #ff4d4d; /* 赤系 */
+    color: #ff4d4d;
+    /* 赤系 */
     font-weight: bold;
-    animation: pulse-red 0.5s infinite alternate; /* 警告のアニメーション */
+    animation: pulse-red 0.5s infinite alternate;
+    /* 警告のアニメーション */
 }
 
 #current-deck-size span.size-ok {
-    color: #4CAF50; /* 緑系 */
+    color: #4CAF50;
+    /* 緑系 */
     font-weight: bold;
 }
 
 #current-deck-size span.size-short {
-    color: #ffc107; /* 黄色系 */
+    color: #ffc107;
+    /* 黄色系 */
     font-weight: normal;
 }
 
@@ -294,6 +325,7 @@ footer {
         opacity: 1;
         transform: scale(1);
     }
+
     to {
         opacity: 0.7;
         transform: scale(1.05);
