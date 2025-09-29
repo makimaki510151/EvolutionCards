@@ -31,7 +31,8 @@ body {
     box-sizing: border-box;
 }
 
-#game-container, .screen {
+#game-container,
+.screen {
     width: 100%;
     max-width: 1300px;
     background-color: var(--primary-bg-color);
@@ -48,7 +49,8 @@ body {
 }
 
 /* --- ヘッダー/フッター --- */
-header, footer {
+header,
+footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -58,12 +60,17 @@ header, footer {
 }
 
 /* --- 情報表示エリア --- */
-#stage-info, #score-info, #turn-info, .deck-status {
+#stage-info,
+#score-info,
+#turn-info,
+.deck-status {
     font-size: 1.1em;
     font-weight: 500;
 }
 
-#score-info span, #turn-info span, .deck-status span {
+#score-info span,
+#turn-info span,
+.deck-status span {
     color: var(--accent-color);
     font-weight: bold;
 }
@@ -76,7 +83,7 @@ header, footer {
     flex-wrap: wrap;
     gap: 20px;
     justify-content: center;
-    background-color: rgba(0,0,0,0.2);
+    background-color: rgba(0, 0, 0, 0.2);
     border-radius: 12px;
     border: 1px dashed var(--border-color);
 }
@@ -97,7 +104,7 @@ header, footer {
     background: linear-gradient(145deg, #414141, #343434);
     border-radius: 15px;
     padding: 20px;
-    box-shadow: 5px 5px 15px rgba(0,0,0,0.5), -5px -5px 15px rgba(255,255,255,0.05);
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5), -5px -5px 15px rgba(255, 255, 255, 0.05);
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
     display: flex;
@@ -110,7 +117,10 @@ header, footer {
 .card::before {
     content: '';
     position: absolute;
-    top: 0; right: 0; bottom: 0; left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 50%);
     opacity: 0;
     transition: opacity 0.3s;
@@ -118,7 +128,7 @@ header, footer {
 
 .card:hover {
     transform: translateY(-8px) scale(1.03);
-    box-shadow: 10px 10px 25px rgba(0,0,0,0.7), -5px -5px 15px rgba(255,255,255,0.05);
+    box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.7), -5px -5px 15px rgba(255, 255, 255, 0.05);
     border-color: var(--accent-color);
 }
 
@@ -153,7 +163,7 @@ header, footer {
 .card-type {
     font-size: 0.9em;
     color: var(--text-muted-color);
-    background-color: rgba(0,0,0,0.3);
+    background-color: rgba(0, 0, 0, 0.3);
     padding: 3px 8px;
     border-radius: 20px;
 }
@@ -194,7 +204,8 @@ button:not(:disabled):hover {
 }
 
 /* --- 画面/オーバーレイ共通 --- */
-#overlay, #deck-edit-overlay {
+#overlay,
+#deck-edit-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -255,7 +266,7 @@ button:not(:disabled):hover {
     border: 1px solid var(--border-color);
     padding: 15px;
     margin-top: 15px;
-    background-color: rgba(0,0,0,0.2);
+    background-color: rgba(0, 0, 0, 0.2);
     border-radius: 8px;
     text-align: left;
 }
@@ -283,6 +294,7 @@ button:not(:disabled):hover {
     letter-spacing: 2px;
     text-shadow: 0 0 15px var(--accent-color);
 }
+
 #title-screen h2 {
     font-size: 1.5em;
     color: var(--text-muted-color);
@@ -304,6 +316,7 @@ button:not(:disabled):hover {
 #deck-management-screen button[data-action="delete"] {
     background-color: var(--danger-color);
 }
+
 #deck-management-screen button[data-action="delete"]:hover {
     background-color: #c82333;
 }
@@ -321,6 +334,7 @@ button:not(:disabled):hover {
     background-color: var(--secondary-bg-color);
     transition: background-color 0.2s;
 }
+
 .deck-item:hover {
     background-color: #454545;
 }
@@ -334,6 +348,7 @@ button:not(:disabled):hover {
     display: flex;
     gap: 10px;
 }
+
 .deck-actions button {
     padding: 8px 16px;
     font-size: 0.9em;
@@ -351,7 +366,7 @@ button:not(:disabled):hover {
     margin-right: 20px;
 }
 
-.deck-select-item input[type="radio"]:checked + .deck-name-display {
+.deck-select-item input[type="radio"]:checked+.deck-name-display {
     color: var(--accent-color);
     font-weight: bold;
 }
@@ -359,6 +374,20 @@ button:not(:disabled):hover {
 /* デッキ編集オーバーレイ */
 #deck-edit-overlay .screen {
     max-width: 800px;
+}
+
+#current-deck-size {
+    font-size: 1.2em;
+    font-weight: bold;
+    /* 追加: 合計枚数を強調 */
+    text-align: center;
+    /* 追加: 中央揃え */
+    padding: 12px;
+    background-color: var(--secondary-bg-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 8px;
+    margin-bottom: 15px;
 }
 
 #edit-deck-name {
@@ -389,15 +418,27 @@ button:not(:disabled):hover {
     padding: 15px;
     border-bottom: 1px solid var(--border-color);
 }
+
 .edit-card-item:last-child {
     border-bottom: none;
 }
-.edit-card-item .card-effect { font-size: 0.9em; }
-.edit-card-item .card-name { font-size: 1.2em; }
+
+.edit-card-item .card-effect {
+    font-size: 0.9em;
+}
+
+.edit-card-item .card-name {
+    font-size: 1.2em;
+}
+
+.edit-controls {
+    display: flex;
+    /* 追加 */
+    align-items: center;
+    /* 追加: 縦方向中央揃え */
+}
 
 .edit-controls button {
-    width: 40px;
-    height: 40px;
     font-size: 1.5em;
     margin: 0 8px;
     background-color: var(--secondary-button-bg);
@@ -405,9 +446,17 @@ button:not(:disabled):hover {
 }
 
 .card-count {
-    width: 30px;
-    display: inline-block;
+    width: 35px;
+
+    /* 修正点：display: flex; を追加し、この要素内のテキストを中央に */
+    display: flex;
+    justify-content: center;
+    /* 水平中央揃え */
+    align-items: center;
+    /* 垂直中央揃え */
+
     text-align: center;
+    /* flexと併用しても良いが、flexが優先される */
     font-weight: bold;
     font-size: 1.2em;
 }
@@ -415,19 +464,56 @@ button:not(:disabled):hover {
 #current-deck-size {
     font-size: 1.2em;
 }
+
 #current-deck-size span.size-over {
     color: var(--danger-color);
     font-weight: bold;
 }
+
 #current-deck-size span.size-ok {
     color: var(--success-color);
     font-weight: bold;
 }
+
 #current-deck-size span.size-short {
     color: var(--warning-color);
 }
 
 @keyframes pulse-red {
-    from { opacity: 1; }
-    to { opacity: 0.7; }
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0.7;
+    }
+}
+
+/* --- 新規追加: MAXレベル表示用スタイル --- */
+.max-level {
+    font-weight: bold;
+    color: var(--accent-color);
+    /* ゴールデンカラーを使用 */
+    background-color: #4d3e00;
+    padding: 2px 5px;
+    border-radius: 4px;
+    margin-left: 5px;
+    display: inline-block;
+}
+
+.edit-card-item .card-max-level {
+    font-size: 0.8em;
+    color: var(--text-muted-color);
+}
+
+.edit-card-item .card-next-effect {
+    font-size: 0.85em;
+    color: var(--success-color);
+    /* 進化の恩恵は成功色 */
+    margin-top: 5px;
+}
+
+.edit-card-item .card-next-effect.max-level {
+    color: var(--text-muted-color);
+    /* カンスト表示はミュート色 */
 }

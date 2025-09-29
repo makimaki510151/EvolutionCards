@@ -39,7 +39,7 @@ export function updateDisplay() {
  * @param {boolean} isEvolutionChoice - 進化候補カードかどうか
  * @returns {HTMLElement} - 作成されたカード要素
  */
-function createCardElement(card, isEvolutionChoice = false) {
+function createCardElement(card, isEvolutionChoice = false) { // 🌟 handIndex引数は renderHand で処理するため削除
     const cardEl = document.createElement('div');
     cardEl.className = 'card';
     cardEl.dataset.id = card.id;
@@ -87,7 +87,6 @@ function createCardElement(card, isEvolutionChoice = false) {
     } else {
         // 通常の手札表示の場合
         htmlContent += generateEffectText(card);
-        cardEl.addEventListener('click', () => useCard(card));
     }
 
     cardEl.innerHTML = htmlContent;
@@ -99,10 +98,23 @@ export function renderHand() {
     $handArea.innerHTML = '<h2>手札</h2>';
     gameState.hand.forEach((card, index) => {
         const cardEl = createCardElement(card);
-        cardEl.dataset.index = index;
+        // 🌟 修正: カード要素に手札内のインデックスを追加
+        cardEl.dataset.handIndex = index;
+
+        // 🌟 修正: クリックイベントリスナーをここで設定し、インデックスを gameCore.useCard に渡す
+        cardEl.addEventListener('click', (e) => {
+            // イベントターゲットからインデックスを取得
+            const handIndex = parseInt(e.currentTarget.dataset.handIndex, 10);
+            if (!isNaN(handIndex)) {
+                // 🌟 useCardにインデックスを渡す
+                useCard(handIndex);
+            }
+        });
+
         $handArea.appendChild(cardEl);
     });
 }
+
 
 
 // --- 進化/ゲームオーバー画面表示 ---

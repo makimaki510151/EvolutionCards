@@ -1,5 +1,11 @@
 // cards.js
 
+// 🌟 新規: カードごとの最大進化レベル（インデックス）を取得するヘルパー関数
+export function getCardMaxEvolution(card) {
+    // maxEvolutionが未定義の場合は、デフォルトの最大インデックス2 (Lv.3) を返す
+    return card.maxEvolution !== undefined ? card.maxEvolution : 2;
+}
+
 // カードの基本データ (複数効果、レベル対応)
 export const ALL_CARDS = [
     // 1. 基本点カード (レベルアップでスコア増加)
@@ -8,12 +14,13 @@ export const ALL_CARDS = [
         name: '基本点',
         type: 'Score',
         baseEvolution: 0, // 初期レベル
+        maxEvolution: 5, // 🌟 追加 (Lv.6が最大)
         effects: [
             {
                 type: 'Score',
                 description: '{value}点獲得',
                 params: {
-                    score: [2, 4, 6] // Lv.0, Lv.1, Lv.2 のスコア値
+                    score: [2, 4, 6, 8, 10, 12, 14] // Lv.0, Lv.1, Lv.2 のスコア値
                 }
             }
         ]
@@ -24,6 +31,7 @@ export const ALL_CARDS = [
         name: '加速点',
         type: 'Score',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加 (Lv.3が最大)
         effects: [
             {
                 type: 'Score',
@@ -47,6 +55,7 @@ export const ALL_CARDS = [
         name: '倍化',
         type: 'Buff',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加 (Lv.3が最大)
         effects: [
             {
                 type: 'Multiplier',
@@ -63,6 +72,7 @@ export const ALL_CARDS = [
         name: 'クイック',
         type: 'Cost',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加 (Lv.3が最大)
         effects: [
             {
                 type: 'CostIgnore',
@@ -73,7 +83,7 @@ export const ALL_CARDS = [
             }
         ]
     },
-    // --- 新規カード群 (10種類) ---
+    // --- 新規カード群 (maxEvolution: 2 を追加) ---
 
     // 5. 集中点 (高スコアだがドロー効果無し)
     {
@@ -81,6 +91,7 @@ export const ALL_CARDS = [
         name: '集中点',
         type: 'Score',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加
         effects: [
             {
                 type: 'Score',
@@ -97,6 +108,7 @@ export const ALL_CARDS = [
         name: '加速ドロー',
         type: 'Draw',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加
         effects: [
             {
                 type: 'Draw',
@@ -120,6 +132,7 @@ export const ALL_CARDS = [
         name: '無償',
         type: 'Cost',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加
         effects: [
             {
                 type: 'CostIgnore',
@@ -136,6 +149,7 @@ export const ALL_CARDS = [
         name: '増殖',
         type: 'Buff',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加
         effects: [
             {
                 type: 'Multiplier',
@@ -159,6 +173,7 @@ export const ALL_CARDS = [
         name: '一時しのぎ',
         type: 'Utility',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加
         effects: [
             {
                 type: 'PurgeSelf', // 新しい効果
@@ -182,6 +197,7 @@ export const ALL_CARDS = [
         name: '機動',
         type: 'Utility',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加
         effects: [
             {
                 type: 'CardUseMod', // 新しい効果
@@ -198,6 +214,7 @@ export const ALL_CARDS = [
         name: '引戻し',
         type: 'Utility',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加
         effects: [
             {
                 type: 'RetrieveDiscard', // 新しい効果
@@ -221,6 +238,7 @@ export const ALL_CARDS = [
         name: '掃除屋',
         type: 'Score',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加
         effects: [
             {
                 type: 'Score',
@@ -244,6 +262,7 @@ export const ALL_CARDS = [
         name: '調査',
         type: 'Draw',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加
         effects: [
             {
                 type: 'Score',
@@ -267,6 +286,7 @@ export const ALL_CARDS = [
         name: '急所',
         type: 'Buff',
         baseEvolution: 0,
+        maxEvolution: 2, // 🌟 追加
         effects: [
             {
                 type: 'CostIgnore',
@@ -293,13 +313,16 @@ export const ALL_CARDS = [
  * @param {number} level - 取得したい進化レベル (0, 1, 2)
  * @returns {Array<{description: string, value: number, type: string}>} - 効果データ配列
  */
-export function getCardEffectData(card, level) { // 🌟 exportを追加
+export function getCardEffectData(card, level) {
+    const maxEvo = getCardMaxEvolution(card); // 🌟 カードごとの最大レベルを取得
+    const actualLevel = Math.min(level, maxEvo); // 🌟 最大レベルを超えないように制限
+
     const data = [];
 
     card.effects.forEach(effect => {
-        const valueKey = Object.keys(effect.params)[0]; // paramsのキー (e.g., score, drawCount, purgeScore)
+        const valueKey = Object.keys(effect.params)[0];
         const values = effect.params[valueKey];
-        const index = Math.min(level, values.length - 1);
+        const index = Math.min(actualLevel, values.length - 1); // 🌟 actualLevelを使用
         const value = values[index];
 
         // 値が0でない、または効果がScore, Draw, Multiplier, CostIgnore以外の特殊効果の場合は含める
@@ -322,12 +345,9 @@ export function getCardEffectData(card, level) { // 🌟 exportを追加
  * @returns {string} - 効果テキストの文字列
  */
 export function generateFullEffectText(card, level) {
-    // getCardEffectData はこの関数内で使用されます
     const data = getCardEffectData(card, level);
 
     let text = data.map(effect => {
-        // descriptionの{value}を実際の値に置き換える
-        // 新規カードのPurgeSelfとDiscardHandに対応するため、score以外のキーも{value}に置き換え可能
         return effect.description.replace(/\{\w+\}/, effect.value);
     }).join(' / ');
 
@@ -342,13 +362,22 @@ export function generateFullEffectText(card, level) {
  */
 export function generateEffectText(card) {
     const currentLevel = card.evolution || card.baseEvolution || 0;
+    const maxEvo = getCardMaxEvolution(card); // 🌟 カードごとの最大レベルを取得
     const displayLevel = currentLevel + 1;
+    const maxDisplayLevel = maxEvo + 1;
 
-    // generateFullEffectText を使用して効果テキストを取得
+    let levelText;
+    if (currentLevel >= maxEvo) {
+        // 🌟 MAX表示
+        levelText = `<span class="max-level">MAX</span>`;
+    } else {
+        levelText = `Lv.${displayLevel}`;
+    }
+
     const effectText = generateFullEffectText(card, currentLevel);
 
-    // 常に表示レベル付きで出力
-    return `<p class="card-effect">Lv.${displayLevel}：${effectText}</p>`;
+    // 🌟 MAXレベル表示を追加
+    return `<p class="card-effect">${levelText} (Max Lv.${maxDisplayLevel})：${effectText}</p>`;
 }
 
 /**
@@ -357,15 +386,14 @@ export function generateEffectText(card) {
  * @returns {object} - 進化後のカードオブジェクト
  */
 export function applyEvolution(card) {
-    const MAX_LEVEL = 2; // Lv.3 (進化レベル2)が最大
+    const maxEvo = getCardMaxEvolution(card); // 🌟 MAXレベルを取得
 
-    // ... 既存のロジックはそのまま ...
-    if (card.evolution < MAX_LEVEL) {
+    if (card.evolution < maxEvo) {
         card.evolution++;
-    } else if (card.baseEvolution < MAX_LEVEL) {
+    } else if (card.baseEvolution < maxEvo) {
         // baseEvolutionを使用しているカードに対するフォールバック
         card.baseEvolution++;
     }
-    
+
     return card;
 }
