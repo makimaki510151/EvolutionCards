@@ -1,7 +1,11 @@
 // main.js
 
-import { renderDeckSelect, renderDeckManagement, setSelectedDeckIndex, createNewDeck, saveDeckChanges, closeEditScreen, loadDeckData } from './deckManager.js';
-import { startGame, endTurn } from './gameCore.js'; 
+import {
+    renderDeckSelect, renderDeckManagement, setSelectedDeckIndex, createNewDeck,
+    saveDeckChanges, closeEditScreen, loadDeckData, editDeck, deleteDeck, copyDeck,
+    changeCardCount // カード枚数変更関数もインポート
+} from './deckManager.js';
+import { startGame, endTurn } from './gameCore.js';
 
 // 必要なモジュールとDOM要素をインポート/取得
 const $titleScreen = document.getElementById('title-screen');
@@ -12,6 +16,7 @@ const $deckEditOverlay = document.getElementById('deck-edit-overlay');
 const $confirmDeckButton = document.getElementById('confirm-deck-button');
 const $startNewGameButton = document.getElementById('start-game-button');
 const $manageDeckButton = document.getElementById('manage-deck-button');
+const $cardEditList = document.getElementById('card-edit-list');
 
 
 // --- 画面切り替え ---
@@ -50,38 +55,60 @@ function showGameScreen() {
 // --- イベントリスナーの追加 ---
 
 function addGlobalEventListeners() {
-    // タイトル画面
-    $startNewGameButton.addEventListener('click', showDeckSelectScreen);
-    $manageDeckButton.addEventListener('click', showDeckManagementScreen);
-
-    // デッキ選択画面
-    document.getElementById('back-to-title-button-select').addEventListener('click', showTitleScreen);
-    $confirmDeckButton.addEventListener('click', () => {
-        // 選択されたラジオボタンの値を取得
-        const selectedRadio = document.querySelector('input[name="selectedDeck"]:checked');
-        if (selectedRadio) {
-            setSelectedDeckIndex(parseInt(selectedRadio.value)); // deckManager.jsの関数
-            showGameScreen();
-        } else {
-            alert('使用するデッキを選択してください。');
-        }
+    $startNewGameButton.addEventListener('click', showDeckSelectScreen); // showDeckSelectScreen は main.js 内で定義済み
+    $manageDeckButton.addEventListener('click', () => {
+        // デッキ管理画面に遷移する際、リストをレンダリングする
+        showDeckManagementScreen();
+        renderDeckManagement(); // deckManager.js の関数を呼び出す
     });
 
     // デッキ管理画面
+    document.getElementById('back-to-title-button-select').addEventListener('click', showTitleScreen);
     document.getElementById('back-to-title-button-manage').addEventListener('click', showTitleScreen);
-    document.getElementById('new-deck-button').addEventListener('click', createNewDeck); // deckManager.jsの関数
+    document.getElementById('new-deck-button').addEventListener('click', createNewDeck);
+
+    // 🌟 追加/修正: デッキ管理リストのボタンに対するイベントリスナー
+    $deckManagementScreen.addEventListener('click', (e) => {
+        const target = e.target;
+        const action = target.dataset.action;
+        const index = parseInt(target.dataset.index);
+
+        if (action === 'edit') {
+            editDeck(index);
+            // 編集オーバーレイを表示する前に、背景となる管理画面は隠さない
+            $deckManagementScreen.classList.remove('hidden');
+        } else if (action === 'copy') {
+            copyDeck(index);
+        } else if (action === 'delete') {
+            deleteDeck(index);
+        }
+    });
 
     // デッキ編集画面
-    document.getElementById('save-deck-button').addEventListener('click', saveDeckChanges); // deckManager.jsの関数
-    document.getElementById('cancel-edit-button').addEventListener('click', closeEditScreen); // deckManager.jsの関数
-    
+    document.getElementById('save-deck-button').addEventListener('click', saveDeckChanges);
+    document.getElementById('cancel-edit-button').addEventListener('click', closeEditScreen);
+
+    // 🌟 追加: カード編集リストのボタンに対するイベントリスナー
+    $cardEditList.addEventListener('click', (e) => {
+        const target = e.target;
+        const action = target.dataset.action;
+        const cardId = target.dataset.cardid;
+
+        if (!cardId) return;
+
+        if (action === 'increase-card') {
+            changeCardCount(cardId, 1);
+        } else if (action === 'decrease-card') {
+            changeCardCount(cardId, -1);
+        }
+    });
+
     // ゲーム画面のターン終了ボタン
-    document.getElementById('end-turn-button').addEventListener('click', endTurn); // gameCore.jsの関数
-    
+    document.getElementById('end-turn-button').addEventListener('click', endTurn);
+
     // ゲームオーバー画面のリスタートボタン
     document.getElementById('restart-button').onclick = showTitleScreen;
 }
-
 
 // --- 初期化処理 ---
 
