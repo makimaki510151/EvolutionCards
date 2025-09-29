@@ -3,7 +3,7 @@
 // 必要な関数とデータをインポート
 import { generateEffectText, ALL_CARDS } from './cards.js';
 // showDeckManagementScreenはmain.jsでの画面制御のため使用しないが、既存のimportは残しておく
-import { showDeckManagementScreen } from './main.js'; 
+import { showDeckManagementScreen } from './main.js';
 
 // --- データのキーと初期データ ---
 const STORAGE_KEY_DECKS = 'roguelite_decks';
@@ -81,27 +81,25 @@ export function setSelectedDeckIndex(index) {
  */
 export function renderDeckSelect() {
     $deckListSelect.innerHTML = '';
-    
+
     playerDecks.forEach((deck, index) => {
         const totalSize = deck.cards.reduce((sum, card) => sum + card.count, 0);
 
         const deckItem = document.createElement('div');
-        deckItem.className = 'deck-item';
+        deckItem.className = 'deck-item deck-select-item'; // 選択画面専用のクラスを追加
+
+        // 🌟 修正: ラジオボタンとテキストを<label>で囲み、クリック可能範囲を広げる
         deckItem.innerHTML = `
-            <div>
+            <label for="deck-${index}-select">
                 <input type="radio" id="deck-${index}-select" name="selected-deck" value="${index}" ${index === selectedDeckIndex ? 'checked' : ''}>
-                <label for="deck-${index}-select">${deck.name} (${totalSize}枚)</label>
-            </div>
+                <span class="deck-name-display">${deck.name} (${totalSize}枚)</span>
+            </label>
         `;
         $deckListSelect.appendChild(deckItem);
     });
 
-    // ラジオボタンの変更イベントを設定
-    $deckListSelect.querySelectorAll('input[name="selected-deck"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            selectedDeckIndex = parseInt(e.target.value);
-        });
-    });
+    // 🌟 修正: ラジオボタンの変更イベントはmain.jsで一元管理するため、ここでは設定を削除します。
+    // main.jsでボタンの活性化と選択インデックスの更新を行います。
 }
 
 
@@ -142,7 +140,7 @@ export function createNewDeck() {
     playerDecks.push(newDeck);
     saveDecks();
     renderDeckManagement();
-    
+
     // 新規作成したデッキの編集画面を開く
     editDeck(playerDecks.length - 1);
 }
@@ -179,7 +177,7 @@ export function deleteDeck(index) {
         saveDecks();
         renderDeckManagement();
         // デッキ選択画面もリフレッシュ (選択中のデッキが変わる可能性があるため)
-        renderDeckSelect(); 
+        renderDeckSelect();
     }
 }
 
@@ -236,7 +234,7 @@ function renderCardEditList() {
 
     // 現在の合計枚数を更新
     const currentTotalSize = tempDeck.reduce((sum, card) => sum + card.count, 0);
-    
+
     // 🌟 修正点1: 合計枚数がMAX_DECK_SIZEを超えた場合にクラスを適用する
     const deckSizeClass = currentTotalSize > MAX_DECK_SIZE ? 'size-over' : (currentTotalSize === MAX_DECK_SIZE ? 'size-ok' : 'size-short');
     $currentDeckSize.innerHTML = `合計: <span class="${deckSizeClass}">${currentTotalSize}</span> / ${MAX_DECK_SIZE}`;
@@ -252,13 +250,13 @@ function renderCardEditList() {
  * @param {number} change - 変更量 (+1 または -1)
  */
 export function changeCardCount(cardId, change) {
-    
+
     // 🌟 修正点3: 最大枚数チェック (MAX_DECK_SIZE) を削除し、制限なく追加できるようにする
 
     if (change < 0 && (tempDeck.find(c => c.id === cardId)?.count || 0) <= 0) {
         return; // 0枚以下の場合は減らさない
     }
-    
+
     let cardEntry = tempDeck.find(c => c.id === cardId);
 
     if (!cardEntry) {
@@ -294,11 +292,11 @@ export function saveDeckChanges() {
     // データの更新
     playerDecks[editingDeckIndex].name = $editDeckName.value.trim() || `名称未設定デッキ ${editingDeckIndex + 1}`;
     // countが0のカードを除去してから保存
-    playerDecks[editingDeckIndex].cards = tempDeck.filter(c => c.count > 0); 
-    
+    playerDecks[editingDeckIndex].cards = tempDeck.filter(c => c.count > 0);
+
     saveDecks();
     closeEditScreen();
-    
+
     // デッキ管理画面とデッキ選択画面を再描画
     renderDeckManagement();
     renderDeckSelect();

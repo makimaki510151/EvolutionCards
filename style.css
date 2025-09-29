@@ -206,16 +206,9 @@ footer {
     border-radius: 5px;
     margin-bottom: 10px;
     text-align: left;
-    /* 🌟 修正: display: flex から display: block または flex-direction: column に変更 */
-    /* display: flex; を削除または以下に変更 */
     display: flex;
-    /* 親要素としてはflexを維持 */
     flex-direction: column;
-    /* 内容物を縦並びにする */
-    justify-content: space-between;
-    /* 削除 */
     align-items: flex-start;
-    /* 左寄せに変更 */
     background-color: #444;
 }
 
@@ -233,8 +226,29 @@ footer {
     /* ボタン間にスペース */
 }
 
+/* 🌟 追加: デッキ選択リストのアイテム（クリック可能範囲を広げる） */
+.deck-select-item label {
+    display: flex;
+    /* inputとspanを横並びにする */
+    align-items: center;
+    width: 100%;
+    /* 全幅に広げる */
+    cursor: pointer;
+    /* クリック可能であることを示す */
+    padding: 5px 0;
+    /* ラジオボタンの周りに少しパディング */
+}
+
+/* ラジオボタン自体のマージンを調整 */
 .deck-item input[type="radio"] {
     margin-right: 10px;
+}
+
+/* 🌟 追加: 選択されているデッキの見た目を強調 */
+.deck-select-item input[type="radio"]:checked+.deck-name-display {
+    color: #ffd700;
+    /* 金色など、目立つ色 */
+    font-weight: bold;
 }
 
 /* デッキ編集オーバーレイは既存のオーバーレイと同じスタイルを流用 */

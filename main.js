@@ -17,6 +17,8 @@ const $confirmDeckButton = document.getElementById('confirm-deck-button');
 const $startNewGameButton = document.getElementById('start-game-button');
 const $manageDeckButton = document.getElementById('manage-deck-button');
 const $cardEditList = document.getElementById('card-edit-list');
+// 🌟 追加: デッキ選択リスト要素
+const $deckListSelect = document.getElementById('deck-list-select');
 
 
 // --- 画面切り替え ---
@@ -37,6 +39,8 @@ export function showTitleScreen() {
 
 export function showDeckSelectScreen() {
     renderDeckSelect(); // deckManager.jsの関数
+    // 🌟 修正: デッキ選択画面表示時、「このデッキで開始」ボタンを常に活性化する
+    $confirmDeckButton.disabled = false;
     showScreen($deckSelectScreen);
 }
 
@@ -59,15 +63,28 @@ function addGlobalEventListeners() {
     $manageDeckButton.addEventListener('click', () => {
         // デッキ管理画面に遷移する際、リストをレンダリングする
         showDeckManagementScreen();
-        renderDeckManagement(); // deckManager.js の関数を呼び出す
+    });
+
+    // 🌟 デッキ選択画面のボタンとラジオボタンの処理を統合
+    $confirmDeckButton.addEventListener('click', showGameScreen); // ゲーム開始ボタン
+    document.getElementById('back-to-title-button-select').addEventListener('click', showTitleScreen);
+
+    // 🌟 決定的な修正: デッキ選択ラジオボタンの変更イベント
+    $deckListSelect.addEventListener('change', (e) => {
+        const target = e.target;
+        if (target.name === 'selected-deck' && target.type === 'radio') {
+            const index = parseInt(target.value);
+            setSelectedDeckIndex(index);
+            // デッキが選択されたので、開始ボタンは押せる状態を維持（念のため）
+            $confirmDeckButton.disabled = false;
+        }
     });
 
     // デッキ管理画面
-    document.getElementById('back-to-title-button-select').addEventListener('click', showTitleScreen);
     document.getElementById('back-to-title-button-manage').addEventListener('click', showTitleScreen);
     document.getElementById('new-deck-button').addEventListener('click', createNewDeck);
 
-    // 🌟 追加/修正: デッキ管理リストのボタンに対するイベントリスナー
+    // 🌟 デッキ管理リストのボタンに対するイベントリスナー
     $deckManagementScreen.addEventListener('click', (e) => {
         const target = e.target;
         const action = target.dataset.action;
@@ -75,8 +92,6 @@ function addGlobalEventListeners() {
 
         if (action === 'edit') {
             editDeck(index);
-            // 編集オーバーレイを表示する前に、背景となる管理画面は隠さない
-            $deckManagementScreen.classList.remove('hidden');
         } else if (action === 'copy') {
             copyDeck(index);
         } else if (action === 'delete') {
@@ -88,7 +103,7 @@ function addGlobalEventListeners() {
     document.getElementById('save-deck-button').addEventListener('click', saveDeckChanges);
     document.getElementById('cancel-edit-button').addEventListener('click', closeEditScreen);
 
-    // 🌟 追加: カード編集リストのボタンに対するイベントリスナー
+    // 🌟 カード編集リストのボタンに対するイベントリスナー
     $cardEditList.addEventListener('click', (e) => {
         const target = e.target;
         const action = target.dataset.action;
@@ -118,4 +133,3 @@ document.addEventListener('DOMContentLoaded', () => {
     addGlobalEventListeners();
     showTitleScreen();
 });
-// 以前の即時呼び出し (loadDeckData(); addGlobalEventListeners(); showTitleScreen();) は削除
