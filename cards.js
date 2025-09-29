@@ -20,7 +20,7 @@ export const ALL_CARDS = [
                 type: 'Score',
                 description: '{value}点獲得',
                 params: {
-                    score: [2, 4, 6, 8, 10, 12, 14] // Lv.0, Lv.1, Lv.2 のスコア値
+                    score: [2, 5, 8, 11, 14, 17, 20] // Lv.0, Lv.1, Lv.2 のスコア値
                 }
             }
         ]

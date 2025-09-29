@@ -1,21 +1,28 @@
-/* style.css - デザイン改修版 */
+/* style.css - デザイン改修版 (ポップカラー & 視認性/レイアウト改善版) */
 
 /* --- 基本設定 --- */
 :root {
-    --bg-color: #1a1a1a;
-    --primary-bg-color: #2c2c2c;
-    --secondary-bg-color: #3a3a3a;
-    --text-color: #e0e0e0;
-    --text-muted-color: #a0a0a0;
-    --accent-color: #ffd700;
-    --border-color: #4a4a4a;
+    /* 背景色を明るいポップなトーンに変更 */
+    --bg-color: #f0f0f5;             /* 非常に薄いグレー/ラベンダー */
+    --primary-bg-color: #ffffff;     /* 白 */
+    --secondary-bg-color: #e6e6fa;   /* 薄いラベンダー */
+    
+    /* 文字色を暗く */
+    --text-color: #333333;           /* 濃いグレー */
+    --text-muted-color: #6a6a6a;     /* 中間グレー */
+    
+    /* アクセントカラーをポップなシアン系に変更 */
+    --accent-color: #00bcd4;         /* シアン */
+    --border-color: #cccccc;         /* 薄いグレーの境界線 */
+    
+    /* ステータス/ボタン色も明るくポップに */
     --success-color: #4CAF50;
-    --warning-color: #ffc107;
-    --danger-color: #ff4d4d;
-    --primary-button-bg: #007bff;
-    --primary-button-hover-bg: #0056b3;
-    --secondary-button-bg: #6c757d;
-    --secondary-button-hover-bg: #5a6268;
+    --warning-color: #ff9800;        /* オレンジ */
+    --danger-color: #ff5252;         /* 鮮やかな赤 */
+    --primary-button-bg: #673ab7;    /* 濃い目の紫 */
+    --primary-button-hover-bg: #5e35b1;
+    --secondary-button-bg: #90a4ae;
+    --secondary-button-hover-bg: #78909c;
 }
 
 body {
@@ -38,7 +45,8 @@ body {
     background-color: var(--primary-bg-color);
     border-radius: 16px;
     padding: 25px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+    /* 明るい背景に合うようにシャドウを調整 */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
     border: 1px solid var(--border-color);
 }
 
@@ -83,7 +91,8 @@ footer {
     flex-wrap: wrap;
     gap: 20px;
     justify-content: center;
-    background-color: rgba(0, 0, 0, 0.2);
+    /* 背景を明るいトーンに変更 */
+    background-color: rgba(0, 0, 0, 0.05);
     border-radius: 12px;
     border: 1px dashed var(--border-color);
 }
@@ -101,17 +110,20 @@ footer {
 .card {
     width: 220px;
     min-height: 300px;
-    background: linear-gradient(145deg, #414141, #343434);
+    /* カードの背景を明るく、立体感を強調 */
+    background: linear-gradient(145deg, #f9f9f9, #e9e9e9);
     border-radius: 15px;
     padding: 20px;
-    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5), -5px -5px 15px rgba(255, 255, 255, 0.05);
+    /* 明るい背景に合うシャドウをさらに強調 */
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2), 0 0 5px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     position: relative;
     overflow: hidden;
-    border: 2px solid transparent;
+    /* ★ 修正: デフォルトの枠線を薄いシアンにして視認性を向上 */
+    border: 2px solid #b3e5fc; 
 }
 
 .card::before {
@@ -121,15 +133,17 @@ footer {
     right: 0;
     bottom: 0;
     left: 0;
-    background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 50%);
+    /* グレア効果を明るいトーンに調整 */
+    background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.08), transparent 50%);
     opacity: 0;
     transition: opacity 0.3s;
 }
 
 .card:hover {
     transform: translateY(-8px) scale(1.03);
-    box-shadow: 10px 10px 25px rgba(0, 0, 0, 0.7), -5px -5px 15px rgba(255, 255, 255, 0.05);
-    border-color: var(--accent-color);
+    /* ★ 修正: ホバー時のシャドウと枠線を大幅に強調 */
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3), 0 0 20px var(--accent-color);
+    border-color: var(--primary-button-bg); 
 }
 
 .card:hover::before {
@@ -137,9 +151,9 @@ footer {
 }
 
 .card.used {
-    opacity: 0.6;
+    opacity: 0.7;
     cursor: default;
-    background: #333;
+    background: #e0e0e0; /* 使用済みカードも明るいグレーに */
     transform: none;
     box-shadow: none;
 }
@@ -157,13 +171,14 @@ footer {
     font-weight: bold;
     font-size: 1.5em;
     color: var(--accent-color);
-    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+    /* テキストシャドウも明るい色に調整 */
+    text-shadow: 0 0 5px rgba(0, 188, 212, 0.5);
 }
 
 .card-type {
     font-size: 0.9em;
-    color: var(--text-muted-color);
-    background-color: rgba(0, 0, 0, 0.3);
+    color: white;
+    background-color: var(--secondary-button-bg);
     padding: 3px 8px;
     border-radius: 20px;
 }
@@ -187,11 +202,12 @@ button {
     cursor: pointer;
     transition: all 0.2s ease;
     background-color: var(--primary-button-bg);
-    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+    /* ポップなボタンシャドウ */
+    box-shadow: 0 4px 10px rgba(103, 58, 183, 0.3);
 }
 
 button:disabled {
-    background-color: #555;
+    background-color: #bdbdbd; /* 明るいグレーに */
     cursor: not-allowed;
     box-shadow: none;
     opacity: 0.7;
@@ -200,7 +216,7 @@ button:disabled {
 button:not(:disabled):hover {
     background-color: var(--primary-button-hover-bg);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+    box-shadow: 0 6px 15px rgba(103, 58, 183, 0.4);
 }
 
 /* --- 画面/オーバーレイ共通 --- */
@@ -211,12 +227,13 @@ button:not(:disabled):hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
+    /* オーバーレイの背景を明るめのトーンに調整 */
+    background: rgba(0, 0, 0, 0.4);
     z-index: 100;
     display: flex;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(5px); /* ブラーを維持 */
 }
 
 .hidden {
@@ -229,7 +246,9 @@ button:not(:disabled):hover {
     width: 90%;
     max-width: 1200px;
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* 明るい背景で目立つ境界線 */
+    border: 3px solid var(--accent-color);
+    box-shadow: 0 0 20px rgba(0, 188, 212, 0.4);
 }
 
 /* --- 🎨 進化画面 (Evolution Screen) 🎨 --- */
@@ -251,13 +270,13 @@ button:not(:disabled):hover {
 }
 
 .evolution-card-wrapper .card:hover {
-    border-color: #fff;
-    box-shadow: 0 0 25px var(--accent-color);
+    border-color: var(--primary-button-bg);
+    box-shadow: 0 0 25px var(--primary-button-bg);
 }
 
 .card-level {
     font-weight: bold;
-    color: var(--accent-color);
+    color: var(--primary-button-bg); /* レベル色を紫に変更 */
     margin-bottom: 10px;
     font-size: 1.2em;
 }
@@ -266,7 +285,7 @@ button:not(:disabled):hover {
     border: 1px solid var(--border-color);
     padding: 15px;
     margin-top: 15px;
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: var(--secondary-bg-color); /* 薄いラベンダーの背景 */
     border-radius: 8px;
     text-align: left;
 }
@@ -292,7 +311,8 @@ button:not(:disabled):hover {
     margin-bottom: 10px;
     font-weight: 900;
     letter-spacing: 2px;
-    text-shadow: 0 0 15px var(--accent-color);
+    /* タイトルシャドウもポップに */
+    text-shadow: 3px 3px 0 #fff, 0 0 15px var(--accent-color);
 }
 
 #title-screen h2 {
@@ -318,7 +338,7 @@ button:not(:disabled):hover {
 }
 
 #deck-management-screen button[data-action="delete"]:hover {
-    background-color: #c82333;
+    background-color: #d32f2f;
 }
 
 /* デッキリスト */
@@ -336,7 +356,7 @@ button:not(:disabled):hover {
 }
 
 .deck-item:hover {
-    background-color: #454545;
+    background-color: #d1c4e9; /* ホバー色を調整 */
 }
 
 .deck-name-display {
@@ -367,7 +387,7 @@ button:not(:disabled):hover {
 }
 
 .deck-select-item input[type="radio"]:checked+.deck-name-display {
-    color: var(--accent-color);
+    color: var(--primary-button-bg); /* 選択色をプライマリボタン色に */
     font-weight: bold;
 }
 
@@ -407,7 +427,7 @@ button:not(:disabled):hover {
     padding: 10px;
     border: 1px solid var(--border-color);
     margin: 20px 0;
-    background-color: var(--bg-color);
+    background-color: #fcfcff; /* 非常に明るい背景 */
     border-radius: 8px;
 }
 
@@ -423,12 +443,25 @@ button:not(:disabled):hover {
     border-bottom: none;
 }
 
-.edit-card-item .card-effect {
-    font-size: 0.9em;
+/* ★ 修正: カード情報表示エリアを追加し、左寄せを確保 */
+.edit-card-info {
+    flex-grow: 1; 
+    text-align: left; 
+    padding-right: 15px; /* コントロールとの間に少し間隔をあける */
 }
 
 .edit-card-item .card-name {
     font-size: 1.2em;
+    /* 中央寄せを防ぐための設定を維持 */
+    text-align: left; 
+    width: 100%; 
+    display: flex; 
+    align-items: center;
+}
+
+.edit-card-item .card-effect {
+    font-size: 0.9em;
+    text-align: left;
 }
 
 .edit-controls {
@@ -436,6 +469,7 @@ button:not(:disabled):hover {
     /* 追加 */
     align-items: center;
     /* 追加: 縦方向中央揃え */
+    flex-shrink: 0; /* サイズ変更をしないように設定 */
 }
 
 .edit-controls button {
@@ -492,9 +526,10 @@ button:not(:disabled):hover {
 /* --- 新規追加: MAXレベル表示用スタイル --- */
 .max-level {
     font-weight: bold;
-    color: var(--accent-color);
-    /* ゴールデンカラーを使用 */
-    background-color: #4d3e00;
+    color: white;
+    /* 白文字に */
+    background-color: var(--primary-button-bg);
+    /* プライマリボタン色で強調 */
     padding: 2px 5px;
     border-radius: 4px;
     margin-left: 5px;
@@ -504,6 +539,7 @@ button:not(:disabled):hover {
 .edit-card-item .card-max-level {
     font-size: 0.8em;
     color: var(--text-muted-color);
+    text-align: left;
 }
 
 .edit-card-item .card-next-effect {
@@ -511,6 +547,7 @@ button:not(:disabled):hover {
     color: var(--success-color);
     /* 進化の恩恵は成功色 */
     margin-top: 5px;
+    text-align: left;
 }
 
 .edit-card-item .card-next-effect.max-level {
