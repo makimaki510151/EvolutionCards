@@ -10,7 +10,7 @@ export let gameState = {
     discard: [],
     hand: [],
     currentScore: 0,
-    targetScore: 10,
+    targetScore: 20,
     stage: 1,
     cardsUsedThisTurn: 0,
     maxCardUses: 3,
@@ -58,43 +58,47 @@ function setupInitialDeck() {
         if (cardData) {
             for (let i = 0; i < deckCard.count; i++) {
                 const newCard = JSON.parse(JSON.stringify(cardData));
-                newCard.evolution = newCard.baseEvolution; 
+                newCard.evolution = newCard.baseEvolution || 0; // baseEvolutionがない場合は0を初期値とする
+                newCard.id = `${newCard.id}_inst${i}`; 
                 gameState.masterCardList.push(newCard); 
             }
         }
     });
 
-    setupDeckForNewStage();
+    setupDeckForNewStage(); 
 }
 
 /**
- * マスターカードリストから山札を再構築し、手札を引く (ステージ切り替え/ゲーム開始時)
+ * マスターカードリストから山札を再構築し、手札をクリアする (ステージ切り替え/ゲーム開始時)
  */
 function setupDeckForNewStage() {
     gameState.discard = [];
-    gameState.hand = [];
+    gameState.hand = []; // ステージ開始時は手札をクリア
+    // masterCardListの最新の状態（進化レベル含む）を元に、deckをディープコピーで再構築
     gameState.deck = JSON.parse(JSON.stringify(gameState.masterCardList)); 
     shuffle(gameState.deck); 
 
-    drawCard(5); 
+    // ステージ開始時のドローは startTurn(5) で行う
 }
 
 export function startGame() {
     gameState.currentScore = 0;
     gameState.stage = 1;
-    gameState.targetScore = 10;
+    gameState.targetScore = 20;
     gameState.cardsUsedThisTurn = 0;
     gameState.evolutionPhase.active = false;
     gameState.nextScoreMultiplier = 1; 
     gameState.costIgnoreCount = 0; 
     
     setupInitialDeck(); 
-    startTurn();
+    // 🌟 修正: ステージ開始時の特殊ドローを行うため、引数 5 を渡す
+    startTurn(5);
     updateDisplay();
 }
 
 /**
  * カードを山札から引く
+ * @param {number} count - 引く枚数
  */
 export function drawCard(count = 1) {
     for (let i = 0; i < count; i++) {
@@ -119,18 +123,30 @@ export function drawCard(count = 1) {
 
 /**
  * ターン開始処理
+ * @param {number} [initialDrawCount=0] - ターン開始時に強制的に引く枚数（ステージ1ターン目などに使用）。0の場合は手札を維持し、5枚になるように補充する。
  */
-export function startTurn() {
-    gameState.discard.push(...gameState.hand);
-    gameState.hand = [];
-    gameState.cardsUsedThisTurn = 0;
+export function startTurn(initialDrawCount = 0) {
     
+    // ターン開始時のリセット処理
+    gameState.cardsUsedThisTurn = 0;
     gameState.nextScoreMultiplier = 1;
     gameState.costIgnoreCount = 0; 
+
+    let cardsToDraw = 0;
     
-    const cardsToDraw = 5 - gameState.hand.length;
+    if (initialDrawCount > 0) {
+        // 1. ステージ1ターン目開始時 (startGame, selectEvolutionCardから呼ばれる): 
+        //    setupDeckForNewStageで手札は空になっているため、強制的に指定枚数(5枚)をドロー
+        cardsToDraw = initialDrawCount;
+    } else {
+        // 2. 通常のターン開始時 (endTurnから呼ばれる): 
+        //    * 🌟 手札を捨てずに維持する
+        //    * 5枚になるように足りない分だけ引く
+        cardsToDraw = 5 - gameState.hand.length;
+    }
+    
     if (cardsToDraw > 0) {
-        drawCard(cardsToDraw); 
+        drawCard(cardsToDraw);
     }
     
     document.getElementById('end-turn-button').disabled = true;
@@ -144,6 +160,7 @@ export function endTurn() {
     document.getElementById('end-turn-button').disabled = true;
     // endTurnが呼ばれた時点でステージ達成していないか最終チェック
     if (!checkStageCompletion()) {
+        // 🌟 修正: 通常のターン開始（手札維持モード）
         startTurn();
     }
 }
@@ -275,9 +292,10 @@ export function selectEvolutionCard(baseCard) {
     if (gameState.evolutionPhase.count <= 0 || !gameState.evolutionPhase.active) return;
     
     const baseId = baseCard.id; 
-    const searchId = baseId.split('_evo')[0];
+    // IDの末尾についている _instXX や _evoXX を除去し、元のカードID（score_1など）を取得
+    const searchId = baseId.split('_')[0] + '_' + baseId.split('_')[1]; 
     
-    const targetCard = gameState.masterCardList.find(c => c.id.split('_evo')[0] === searchId && (c.evolution || c.baseEvolution || 0) < 2);
+    const targetCard = gameState.masterCardList.find(c => c.id.includes(searchId) && (c.evolution || c.baseEvolution || 0) < 2);
     
     if (targetCard) {
         applyEvolution(targetCard);
@@ -298,15 +316,17 @@ export function selectEvolutionCard(baseCard) {
         gameState.evolutionPhase.active = false;
         
         gameState.stage++;
-        gameState.targetScore *= 2; 
+        gameState.targetScore += 20;
         gameState.currentScore = 0;
         
+        // 🌟 修正: ステージ切り替え時の処理を呼び出し（山札再構築と手札クリア）
         setupDeckForNewStage(); 
         
         document.getElementById('overlay').classList.add('hidden');
         document.getElementById('evolution-screen').classList.add('hidden');
 
-        startTurn();
+        // 🌟 修正: ステージ開始時の特殊ドローを行うため、引数 5 を渡す
+        startTurn(5);
     }
     
     updateDisplay();
