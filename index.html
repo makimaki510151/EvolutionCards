@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デッキ構築型ローグライト スコアアタック</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="game-container">
+        <header>
+            <div id="stage-info">ステージ: <span id="current-stage">1</span></div>
+            <div id="score-info">
+                目標得点: <span id="target-score">10</span> / 現在得点: <span id="current-score">0</span>
+            </div>
+            <div id="turn-info">
+                残り使用枚数: <span id="card-use-count">3</span>
+            </div>
+        </header>
+
+        <main>
+            <div id="hand-area" class="card-area">
+                <h2>手札</h2>
+                </div>
+        </main>
+
+        <footer>
+            <div id="deck-info" class="deck-status">山札: <span id="deck-count">20</span>枚</div>
+            <div id="discard-info" class="deck-status">捨て札: <span id="discard-count">0</span>枚</div>
+            <button id="end-turn-button" disabled>ターン終了</button>
+        </footer>
+
+        <div id="overlay" class="hidden">
+            <div id="evolution-screen" class="screen hidden">
+                <h2>ステージクリア！デッキ進化</h2>
+                <p>進化させるカードを3回選びましょう (残り: <span id="evo-count">3</span>回)</p>
+                <div id="evolution-choices">
+                    </div>
+            </div>
+
+            <div id="gameover-screen" class="screen hidden">
+                <h2>ゲームオーバー</h2>
+                <p>最終ステージ: <span id="final-stage"></span></p>
+                <p>最高得点: <span id="high-score"></span></p>
+                <button id="restart-button">リスタート</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="cards.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

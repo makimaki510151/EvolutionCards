@@ -1,0 +1,160 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #222;
+    color: #eee;
+    display: flex;
+    justify-content: center;
+}
+
+#game-container {
+    width: 100%;
+    max-width: 800px;
+    background-color: #333;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+/* ヘッダー */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #555;
+    margin-bottom: 20px;
+}
+
+/* カードエリア */
+.card-area {
+    min-height: 150px;
+    padding: 10px 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+#hand-area h2 {
+    width: 100%;
+    margin-bottom: 10px;
+    font-size: 1.2em;
+}
+
+/* カード共通スタイル */
+.card {
+    width: 100px;
+    height: 140px;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    padding: 10px;
+    background-color: #444;
+    cursor: pointer;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.card.used {
+    opacity: 0.5;
+    cursor: default;
+    background-color: #555;
+}
+
+.card-title {
+    font-weight: bold;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+.card-effect {
+    font-size: 0.75em;
+    color: #ccc;
+}
+
+/* フッター */
+footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 2px solid #555;
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+#end-turn-button {
+    padding: 10px 20px;
+    font-size: 1em;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#end-turn-button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}
+
+#end-turn-button:not(:disabled):hover {
+    background-color: #0056b3;
+}
+
+/* オーバーレイと画面 */
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.screen {
+    background-color: #333;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    width: 80%;
+    max-width: 500px;
+}
+
+/* 進化画面 */
+#evolution-choices {
+    display: flex;
+    justify-content: space-around;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.evolution-card-wrapper {
+    position: relative;
+}
+
+.evolution-choice-card {
+    border: 3px solid gold;
+    transform: scale(0.9);
+}
+
+.evolution-choice-card:hover {
+    transform: scale(0.95);
+    border-color: yellow;
+}
