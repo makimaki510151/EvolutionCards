@@ -27,12 +27,17 @@ const INITIAL_DECK_TEMPLATE = {
         { id: 'score_1', count: 10 },
         { id: 'score_2', count: 5 },
         { id: 'combo_x2', count: 3 },
-        { id: 'draw_1', count: 2 },
+        { id: 'combo_ignore', count: 2 },
     ]
 };
 
 let playerDecks = [];
 let selectedDeckIndex = 0;
+
+// 🌟 デッキ編集用の状態
+let editingDeckIndex = -1; // 現在編集中のデッキのインデックス
+let tempDeck = [];         // 編集作業用の一時的なデッキデータ (カードの枚数データ)
+
 
 // --- DOM要素の取得 ---
 const $handArea = document.getElementById('hand-area');
@@ -48,13 +53,21 @@ const $evolutionScreen = document.getElementById('evolution-screen');
 const $gameoverScreen = document.getElementById('gameover-screen');
 const $evolutionChoices = document.getElementById('evolution-choices');
 
-// 🌟 追加 DOM要素
+// 🌟 追加 DOM要素 (画面切り替え・デッキ管理)
 const $titleScreen = document.getElementById('title-screen');
 const $deckSelectScreen = document.getElementById('deck-select-screen');
 const $deckManagementScreen = document.getElementById('deck-management-screen');
 const $gameContainer = document.getElementById('game-container');
 const $deckListSelect = document.getElementById('deck-list-select');
 const $deckListManagement = document.getElementById('deck-list-management');
+
+// 🌟 追加 DOM要素 (デッキ編集画面)
+const $deckEditOverlay = document.getElementById('deck-edit-overlay');
+const $editDeckName = document.getElementById('edit-deck-name');
+const $currentDeckSize = document.getElementById('current-deck-size');
+const $cardEditList = document.getElementById('card-edit-list');
+const $saveDeckButton = document.getElementById('save-deck-button');
+const $cancelEditButton = document.getElementById('cancel-edit-button');
 
 
 // --- ローカルストレージ処理 ---
@@ -106,7 +119,8 @@ function setupInitialDeck() {
         const baseCard = ALL_CARDS.find(c => c.id === cardData.id);
         if (baseCard) {
             for (let i = 0; i < cardData.count; i++) {
-                initialDeck.push({...baseCard}); // 新しいオブジェクトとして追加
+                // 🌟 baseEvolutionを初期レベルとしてコピー
+                initialDeck.push({...baseCard, evolution: baseCard.baseEvolution || 0}); 
             }
         }
     });
@@ -120,7 +134,7 @@ function setupInitialDeck() {
             const baseCard = ALL_CARDS.find(c => c.id === cardData.id);
             if (baseCard) {
                 for (let i = 0; i < cardData.count; i++) {
-                    initialDeck.push({...baseCard});
+                    initialDeck.push({...baseCard, evolution: baseCard.baseEvolution || 0});
                 }
             }
         });
@@ -148,13 +162,15 @@ function updateDisplay() {
 function createCardElement(card, isEvolutionChoice = false) {
     const cardEl = document.createElement('div');
     cardEl.className = `card ${isEvolutionChoice ? 'evolution-choice-card' : ''}`;
+    
+    // 🌟 統一された効果テキストを生成 (cards.js の関数を使用)
+    const effectHtml = generateEffectText(card);
+    
     cardEl.innerHTML = `
         <div class="card-title">${card.name}</div>
-        <div class="card-effect">${card.effect}</div>
-        ${card.evolution > 0 ? `<div class="card-level">Lv.${card.evolution}</div>` : ''}
+        ${effectHtml}
     `;
     cardEl.dataset.id = card.id;
-    // 手札内のインデックスはレンダリング時に設定
     cardEl.onclick = () => isEvolutionChoice ? selectEvolutionCard(card) : useCard(card);
     return cardEl;
 }
@@ -199,13 +215,21 @@ function startTurn() {
 /** カードの使用処理 */
 function useCard(card) {
     const cardIndex = gameState.hand.indexOf(card);
-    if (cardIndex === -1) return; // カードが手札にない
+    if (cardIndex === -1) return; 
 
+    const currentLevel = card.evolution || 0;
     let uses = 1; // 使用枚数制限を消費する量
+    let isCostIgnored = false;
 
-    // 【1】コスト操作カードの効果判定
-    if (card.id.startsWith('combo_ignore')) {
-        uses = 0; // コスト消費なし
+    // 🌟 コスト無視効果の事前判定 (簡易化のため、ここではカードタイプCostの1番目の効果のみを判定)
+    const costEffect = card.effects.find(e => e.type === 'CostIgnore');
+    if (costEffect) {
+        const ignoreCount = costEffect.params.ignoreCount[Math.min(currentLevel, costEffect.params.ignoreCount.length - 1)];
+        // 最初のCostIgnore効果のみを判定に使う（ここでは常に1枚目を無視する効果を想定）
+        if (ignoreCount > 0) {
+            uses = 0; // コスト消費なし
+            isCostIgnored = true;
+        }
     }
 
     if (uses > 0 && gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
@@ -213,38 +237,30 @@ function useCard(card) {
         return;
     }
 
-    // 【2】カード効果の適用
-    let scoreMultiplier = 1;
-    let baseScore = card.baseScore || 0; 
-    
-    // TODO: バフ効果の適用ロジックをここに実装
+    // 🌟 【2】複数カード効果の適用
+    card.effects.forEach(effect => {
+        const valueKey = Object.keys(effect.params)[0];
+        const value = effect.params[valueKey][Math.min(currentLevel, effect.params[valueKey].length - 1)];
 
-    switch (card.type) {
-        case 'Score':
-            gameState.currentScore += baseScore * scoreMultiplier;
-            break;
-        case 'Buff':
-            alert(`${card.effect}が発動！ (効果は次のカードに適用される想定)`);
-            break;
-        case 'Resource':
-            if (card.id.startsWith('draw_1')) {
-                const extraDraw = (card.evolution === 1) ? 2 : 1;
-                drawCard(extraDraw);
-            } else if (card.id.startsWith('discard_score')) {
-                // 簡易化のため、自身以外のカードが手札にあれば自動で一番左を捨てる処理
-                if (gameState.hand.length > 1) {
-                    // NOTE: useCard処理で自身がhandから取り除かれる前に、捨てるカードを選択する必要があるが、
-                    // 簡易実装のため、自身以外のカードがあればスコアを付与し、捨て札ロジックをスキップ
-                    gameState.currentScore += baseScore;
-                } else {
-                    alert('手札がこれ1枚なので捨てられません。');
-                    return;
-                }
-            } else if (card.id.startsWith('trash_remove')) {
-                 alert('手札からカードを永久に除去するUIが必要です。今回はスキップします。');
-            }
-            break;
-    }
+        if (value === 0 && effect.type !== 'CostIgnore') return; // 値が0の効果はスキップ
+
+        switch (effect.type) {
+            case 'Score':
+                // スコア倍率（ここでは未実装のバフ状態）を適用
+                gameState.currentScore += value * 1; 
+                break;
+            case 'Draw':
+                drawCard(value);
+                break;
+            case 'Multiplier':
+                alert(`バフ発動: 次のカードの効果が${value}倍になります！`);
+                // TODO: gameStateにバフ状態を保存するロジックを実装
+                break;
+            case 'CostIgnore':
+                if (isCostIgnored) alert(`コスト無視効果発動: 次の${value}枚のカードがコスト無視になります！`);
+                break;
+        }
+    });
 
     // 【3】カードの移動と使用回数更新
     if (uses > 0) {
@@ -256,7 +272,7 @@ function useCard(card) {
     gameState.discard.push(card);
     
     renderHand();
-    checkStageCompletion(); // ステージクリア判定
+    checkStageCompletion(); 
     updateDisplay();
 }
 
@@ -282,10 +298,10 @@ function checkStageCompletion() {
         
         // 進化の候補を選ぶ
         const allCards = [...gameState.hand, ...gameState.discard, ...gameState.deck];
-        const uniqueCards = [...new Set(allCards.map(c => c.id))].map(id => {
-            // ALL_CARDSから元のカード定義を取得
-            const baseId = id.split('_evo')[0];
-            return {...ALL_CARDS.find(c => c.id === baseId) || allCards.find(c => c.id === id)}; // 進化情報を含む現在のカードも使用
+        const uniqueCards = [...new Set(allCards.map(c => c.id.split('_evo')[0]))].map(baseId => {
+            // ALL_CARDSから元のカード定義を取得し、進化レベルが最も高いものを候補とする（簡易化）
+            const bestCard = allCards.find(c => c.id.split('_evo')[0] === baseId) || ALL_CARDS.find(c => c.id === baseId);
+            return {...bestCard};
         });
         
         gameState.evolutionPhase.candidates = shuffle(uniqueCards).slice(0, 4);
@@ -326,34 +342,40 @@ function renderEvolutionChoices() {
 function selectEvolutionCard(card) {
     if (gameState.evolutionPhase.count <= 0) return;
 
-    // 1. デッキ内の同じカード（同じID）を検索し、進化を適用
-    const targetBaseID = card.id.split('_evo')[0]; // 元のカードIDを取得
+    // 1. デッキ内の同じカード（同じIDのベース部分）を検索し、進化を適用
+    const targetBaseID = card.id.split('_evo')[0]; 
 
     // 全てのカードプール（デッキ、捨て札、手札）をチェック
     const allCards = [...gameState.deck, ...gameState.discard, ...gameState.hand];
     
     let evolvedCount = 0;
+    
+    // 進化対象のカードIDは、進化レベルが最も高いカードのIDを基準にする
+    const cardToEvolve = allCards.find(c => c.id.split('_evo')[0] === targetBaseID);
+    if (!cardToEvolve) return alert("エラー: デッキ内に進化対象のカードが見つかりませんでした。");
+
+    // cards.jsのapplyEvolutionを呼び出し、進化後の情報を取得
+    const newEvolvedCardData = applyEvolution({...cardToEvolve});
+    if (cardToEvolve.evolution === newEvolvedCardData.evolution) {
+        alert(`${cardToEvolve.name} は既に最大レベルです。`);
+        return;
+    }
+    
+    // 元のIDを持つ全てのカードを進化後のデータに置き換える
     for (let i = 0; i < allCards.length; i++) {
         const deckCard = allCards[i];
-        // 元のIDが一致するカードに進化を適用
         if (deckCard.id.split('_evo')[0] === targetBaseID) {
-            // ALL_CARDSのapplyEvolution関数で進化ロジックを適用 (cards.jsで定義)
-            // NOTE: applyEvolutionはカードをインプレイスで変更する想定
-            Object.assign(deckCard, applyEvolution(deckCard));
+            // 進化後のカードデータに更新
+            Object.assign(deckCard, newEvolvedCardData); 
             evolvedCount++;
         }
     }
 
-    if (evolvedCount === 0) {
-        alert("エラー: デッキ内に進化対象のカードが見つかりませんでした。");
-        return;
-    }
-    
     // 2. 進化回数を減らし、UIを更新
     gameState.evolutionPhase.count--;
     document.getElementById('evo-count').textContent = gameState.evolutionPhase.count;
     
-    // 3. 進化候補から選択されたカードを削除し、新しい候補を提示する (簡易化のため再抽選はしない)
+    // 3. 進化候補から選択されたカードを削除
     gameState.evolutionPhase.candidates = gameState.evolutionPhase.candidates.filter(c => c.id !== card.id);
     
     if (gameState.evolutionPhase.count === 0) {
@@ -407,8 +429,8 @@ function showGameOverScreen() {
 // --- 🌟 画面切り替え ---
 
 function showScreen(screenElement) {
-    // 全ての主要画面を非表示にする
-    [$titleScreen, $deckSelectScreen, $deckManagementScreen, $gameContainer, $overlay].forEach(el => {
+    // 全ての主要画面とオーバーレイを非表示にする
+    [$titleScreen, $deckSelectScreen, $deckManagementScreen, $gameContainer, $overlay, $deckEditOverlay].forEach(el => {
         el.classList.add('hidden');
     });
     // 指定された画面を表示
@@ -464,6 +486,7 @@ function renderDeckManagement() {
         deckItem.innerHTML = `
             <span>${deck.name} (${totalCards}枚)</span>
             <div>
+                <button onclick="editDeck(${index})">編集</button>
                 <button onclick="renameDeck(${index})">名前変更</button>
                 <button onclick="copyDeck(${index})">コピー</button>
                 <button onclick="deleteDeck(${index})" ${playerDecks.length === 1 ? 'disabled' : ''}>削除</button>
@@ -523,6 +546,137 @@ function createNewDeck() {
     }
 }
 
+// --- 🌟 デッキ編集機能のロジック ---
+
+/** デッキ編集画面を表示する */
+function editDeck(index) {
+    editingDeckIndex = index;
+    const originalDeck = playerDecks[index];
+    
+    // 編集用のデータを作成（ALL_CARDSの全種類をベースに、既存の枚数を反映）
+    tempDeck = ALL_CARDS.map(baseCard => {
+        const existingCard = originalDeck.cards.find(c => c.id === baseCard.id);
+        return {
+            id: baseCard.id,
+            name: baseCard.name,
+            count: existingCard ? existingCard.count : 0
+        };
+    });
+
+    $editDeckName.textContent = `デッキ名: ${originalDeck.name}`;
+    $deckEditOverlay.classList.remove('hidden');
+    renderCardEditList();
+}
+
+/** カード編集リストの描画 (進化情報表示を追加) */
+function renderCardEditList() {
+    $cardEditList.innerHTML = '';
+    let currentTotalSize = 0;
+    const MAX_LEVEL = 2; // cards.jsに合わせた最大レベル
+
+    tempDeck.forEach((card, index) => {
+        currentTotalSize += card.count;
+        
+        // 🌟 ALL_CARDSから現在のカードの完全な定義を取得
+        const baseCardDefinition = ALL_CARDS.find(c => c.id === card.id);
+        if (!baseCardDefinition) return; 
+
+        // レベルごとの効果を比較表示するHTMLを生成
+        let levelInfoHtml = '<div style="font-size: 0.8em; margin-top: 5px; color: #ccc;">';
+        
+        // 現在のレベルの効果（Lv.0として扱う）
+        const currentEffects = generateEffectText(Object.assign({}, baseCardDefinition, { evolution: 0 })).replace(/<p class="card-effect">|<\/p>/g, '');
+        levelInfoHtml += `**基本効果**: ${currentEffects}`;
+
+        if (0 < MAX_LEVEL) {
+             // 次のレベルの進化効果を表示 (Lv.1として扱う)
+             const nextLevelEffects = generateEffectText(Object.assign({}, baseCardDefinition, { evolution: 1 })).replace(/<p class="card-effect">|<\/p>/g, '');
+             levelInfoHtml += `<br>次の進化: <span style="color: #ffd700;">${nextLevelEffects.replace('Lv.1：', '')}</span>`;
+        }
+        levelInfoHtml += '</div>';
+
+        
+        const cardItem = document.createElement('div');
+        cardItem.className = 'edit-card-item';
+        
+        cardItem.innerHTML = `
+            <div style="flex-grow: 1;">
+                <span>${card.name}</span>
+                ${levelInfoHtml}
+            </div>
+            <div class="edit-controls">
+                <button onclick="changeCardCount(${index}, -1)" ${card.count === 0 ? 'disabled' : ''}>-</button>
+                <span class="card-count">${card.count}</span>
+                <button onclick="changeCardCount(${index}, 1)">+</button>
+            </div>
+        `;
+        $cardEditList.appendChild(cardItem);
+    });
+
+    $currentDeckSize.textContent = currentTotalSize;
+    
+    // 合計枚数が20枚の場合のみ保存を有効にする
+    $saveDeckButton.disabled = currentTotalSize !== 20;
+    
+    // デッキサイズが20枚であることを強調表示
+    $currentDeckSize.style.color = currentTotalSize === 20 ? '#3f3' : '#f33';
+}
+
+/** カードの枚数を増減させる */
+function changeCardCount(index, delta) {
+    const card = tempDeck[index];
+    const currentTotalSize = tempDeck.reduce((sum, c) => sum + c.count, 0);
+
+    // 減らす操作
+    if (delta < 0) {
+        if (card.count > 0) {
+            card.count += delta;
+        }
+    } 
+    // 増やす操作
+    else if (delta > 0) {
+        // 合計が20枚を超えないように制限
+        if (currentTotalSize < 20) {
+            card.count += delta;
+        } else {
+            alert("デッキの合計枚数は20枚までです。");
+        }
+    }
+    
+    renderCardEditList();
+}
+
+/** 変更を保存する */
+function saveDeckChanges() {
+    if (editingDeckIndex === -1) return;
+
+    const currentTotalSize = tempDeck.reduce((sum, c) => sum + c.count, 0);
+    if (currentTotalSize !== 20) {
+        alert("デッキの合計枚数は20枚でなければ保存できません。");
+        return;
+    }
+
+    // 編集後の一時データを playerDecks に反映
+    const newCards = tempDeck
+        .filter(c => c.count > 0) // 枚数が0のカードは除外
+        .map(c => ({ id: c.id, count: c.count }));
+
+    playerDecks[editingDeckIndex].cards = newCards;
+    
+    saveDeckData();
+    closeEditScreen();
+    alert(`デッキ「${playerDecks[editingDeckIndex].name}」の変更を保存しました。`);
+}
+
+/** 編集画面を閉じる */
+function closeEditScreen() {
+    $deckEditOverlay.classList.add('hidden');
+    editingDeckIndex = -1;
+    tempDeck = [];
+    renderDeckManagement(); // デッキ管理画面を再描画して枚数を更新
+    renderDeckSelect();     // デッキ選択画面も更新
+}
+
 
 // --- 🌟 イベントリスナーの追加 ---
 $endTurnButton.addEventListener('click', endTurn);
@@ -547,6 +701,10 @@ document.getElementById('confirm-deck-button').addEventListener('click', () => {
 // デッキ管理画面
 document.getElementById('back-to-title-button-manage').addEventListener('click', showTitleScreen);
 document.getElementById('new-deck-button').addEventListener('click', createNewDeck);
+
+// デッキ編集画面
+$saveDeckButton.addEventListener('click', saveDeckChanges);
+$cancelEditButton.addEventListener('click', closeEditScreen);
 
 
 // --- ゲーム開始（タイトル画面から呼ばれる） ---

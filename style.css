@@ -212,3 +212,63 @@ footer {
 .deck-item input[type="radio"] {
     margin-right: 10px;
 }
+
+/* デッキ編集オーバーレイは既存のオーバーレイと同じスタイルを流用 */
+#deck-edit-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9); /* 少し濃い背景 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 110; /* 他のオーバーレイより前面 */
+}
+
+/* カード編集リストのスタイル */
+#card-edit-list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #555;
+    margin: 15px 0;
+    background-color: #2a2a2a;
+}
+
+.edit-card-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed #444;
+}
+
+.edit-card-item:last-child {
+    border-bottom: none;
+}
+
+.edit-controls button {
+    width: 30px;
+    height: 30px;
+    font-size: 1.2em;
+    margin: 0 5px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.card-count {
+    width: 20px;
+    display: inline-block;
+    text-align: center;
+    font-weight: bold;
+}
+
+#save-deck-button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+}

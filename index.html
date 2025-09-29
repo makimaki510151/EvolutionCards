@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>デッキ構築型ローグライト スコアアタック</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <div id="title-screen" class="screen">
@@ -17,7 +19,7 @@
     <div id="deck-select-screen" class="screen hidden">
         <h2>デッキ選択</h2>
         <div id="deck-list-select">
-            </div>
+        </div>
         <button id="confirm-deck-button">このデッキで開始</button>
         <button id="back-to-title-button-select">タイトルに戻る</button>
     </div>
@@ -25,12 +27,23 @@
     <div id="deck-management-screen" class="screen hidden">
         <h2>デッキ管理</h2>
         <div id="deck-list-management">
-            </div>
+        </div>
         <button id="new-deck-button">新規デッキ作成</button>
         <button id="back-to-title-button-manage">タイトルに戻る</button>
     </div>
-    
-    <div id="game-container" class="hidden"> 
+
+    <div id="deck-edit-overlay" class="hidden">
+        <div id="deck-edit-screen" class="screen">
+            <h2 id="edit-deck-name">デッキ名: [デッキ名]</h2>
+            <p>合計枚数: <span id="current-deck-size">20</span>/20枚</p>
+            <div id="card-edit-list">
+            </div>
+            <button id="save-deck-button" disabled>変更を保存</button>
+            <button id="cancel-edit-button">キャンセル</button>
+        </div>
+    </div>
+
+    <div id="game-container" class="hidden">
         <header>
             <div id="stage-info">ステージ: <span id="current-stage">1</span></div>
             <div id="score-info">
@@ -51,7 +64,7 @@
             <button id="end-turn-button" disabled>ターン終了</button>
         </footer>
     </div>
-    
+
     <div id="overlay" class="hidden">
         <div id="evolution-screen" class="screen hidden">
             <h2>ステージクリア！デッキ進化</h2>
@@ -69,4 +82,5 @@
     <script src="cards.js"></script>
     <script src="game.js"></script>
 </body>
+
 </html>
