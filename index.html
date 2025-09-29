@@ -44,11 +44,15 @@
         </div>
     </div>
 
-    <div id="game-container" class="hidden">
+    <div id="game-container" class="screen hidden">
         <header>
-            <div id="stage-info">ステージ: <span id="current-stage">1</span></div>
+            <button id="quit-game-button" class="action-button">ゲーム破棄</button>
+
             <div id="score-info">
-                目標得点: <span id="target-score">10</span> / 現在得点: <span id="current-score">0</span>
+                スコア: <span id="current-score">0</span> / <span id="target-score">20</span>
+            </div>
+            <div id="stage-info">
+                ステージ: <span id="current-stage">1</span>
             </div>
             <div id="turn-info">
                 残り使用枚数: <span id="card-use-count">3</span>

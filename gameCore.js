@@ -8,7 +8,7 @@ import {
 import { applyEvolution, ALL_CARDS, getCardEffectData, getCardMaxEvolution, generateEffectText } from './cards.js';
 
 // --- ゲーム状態の定義 ---
-export let gameState = {
+const INITIAL_GAME_STATE_TEMPLATE = {
     deck: [],
     discard: [],
     hand: [],
@@ -28,6 +28,7 @@ export let gameState = {
     costIgnoreCount: 0
 };
 
+export let gameState = { ...INITIAL_GAME_STATE_TEMPLATE };
 // --- ハイスコア処理 ---
 const STORAGE_KEY_HIGH_SCORE = 'roguelite_highscore';
 function saveHighScore() {
@@ -37,6 +38,23 @@ function saveHighScore() {
 function loadHighScore() {
     const score = localStorage.getItem(STORAGE_KEY_HIGH_SCORE);
     gameState.highScore = score ? parseInt(score, 10) : 0;
+}
+
+/**
+ * ゲームの状態を初期状態にリセットし、タイトル画面に戻る準備をする
+ */
+export function resetGame() {
+    const currentHighScore = gameState.highScore; // 🌟 ハイスコアを一時的に保持
+
+    // gameStateをINITIAL_GAME_STATE_TEMPLATEの内容で上書き
+    Object.assign(gameState, INITIAL_GAME_STATE_TEMPLATE);
+
+    // ハイスコアを再設定（リセットされるのを防ぐ）
+    gameState.highScore = currentHighScore;
+
+    // UIをリセット後の状態に更新
+    // 描画が初期化されることで、ゲームオーバー画面などが閉じられることを保証
+    updateDisplay();
 }
 
 /**

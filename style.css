@@ -709,3 +709,33 @@ button:not(:disabled):hover {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     cursor: pointer;
 }
+
+#game-container header {
+    display: flex; /* 🌟 変更: flexで要素を配置 */
+    justify-content: space-between; /* 要素を両端に配置 */
+    align-items: center;
+    padding: 10px 20px;
+    background-color: var(--primary-bg-color);
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* 🌟 新規: ゲーム破棄ボタンのスタイル */
+#quit-game-button {
+    /* 破壊的な操作であることを示す色 (danger-color) */
+    background-color: var(--danger-color);
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.2s;
+    /* flexアイテムの並び順を最初にし、他の要素との間に自動マージンを設定 */
+    order: -1;
+    margin-right: auto;
+}
+
+#quit-game-button:hover {
+    background-color: #d32f2f; /* 少し暗い赤 */
+}

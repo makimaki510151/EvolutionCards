@@ -5,7 +5,8 @@ import {
     saveDeckChanges, closeEditScreen, loadDeckData, editDeck, deleteDeck, copyDeck,
     changeCardCount // カード枚数変更関数もインポート
 } from './deckManager.js';
-import { startGame, endTurn } from './gameCore.js';
+// 🌟 変更点1: resetGame をインポート (これはご提示のコードに既に含まれています)
+import { startGame, endTurn, resetGame } from './gameCore.js';
 
 // 必要なモジュールとDOM要素をインポート/取得
 const $titleScreen = document.getElementById('title-screen');
@@ -37,7 +38,9 @@ export function showScreen(screenElement) {
     screenElement.classList.remove('hidden');
 }
 
+// 🌟 変更点2: showTitleScreen 関数。resetGame を呼び出すことでゲーム状態をリセットし、タイトル画面へ戻る (これもご提示のコードに既に含まれています)
 export function showTitleScreen() {
+    resetGame();
     showScreen($titleScreen);
 }
 
@@ -124,6 +127,13 @@ function addGlobalEventListeners() {
 
     // ゲーム画面のターン終了ボタン
     document.getElementById('end-turn-button').addEventListener('click', endTurn);
+
+    // 🌟 変更点3: ゲーム画面のゲーム破棄ボタンのリスナーを追加
+    document.getElementById('quit-game-button').addEventListener('click', () => {
+        if (confirm('ゲームを破棄してタイトルに戻りますか？現在の進行状況は失われます。')) {
+            showTitleScreen();
+        }
+    });
 
     // ゲームオーバー画面のリスタートボタン
     document.getElementById('restart-button').onclick = showTitleScreen;
