@@ -1,6 +1,6 @@
 // gameCore.js
 
-import { getPlayerDecks, getSelectedDeck } from './deckManager.js'; // <- getSelectedDeck を使用
+import { getSelectedDeck } from './deckManager.js'; 
 import { updateDisplay, renderHand, showGameOverScreen, showEvolutionScreen } from './uiRenderer.js';
 import { applyEvolution, ALL_CARDS } from './cards.js';
 
@@ -19,12 +19,17 @@ export let gameState = {
         active: false,
         count: 3,
         candidates: []
-    }
+    },
+    masterCardList: [], 
+    
+    // 次に使用するカードの数値効果に適用される倍率
+    nextScoreMultiplier: 1,   
+    // 次に使用するカードの使用枚数カウントを無視する回数
+    costIgnoreCount: 0        
 };
 
 // --- ハイスコア処理 ---
 const STORAGE_KEY_HIGH_SCORE = 'roguelite_highscore';
-
 function saveHighScore() {
     localStorage.setItem(STORAGE_KEY_HIGH_SCORE, gameState.highScore.toString());
 }
@@ -41,61 +46,64 @@ function shuffle(array) {
 }
 
 /**
- * 選択されたデッキデータからゲームで使う山札を構築する
+ * 選択されたデッキデータから初期のマスターカードリストを構築する
  */
 function setupInitialDeck() {
     const selectedDeck = getSelectedDeck();
-    gameState.deck = [];
-    gameState.discard = [];
-    gameState.hand = [];
-
-    // デッキ定義を展開して実際のカードオブジェクトの配列を作る
+    gameState.masterCardList = [];
     selectedDeck.cards.forEach(deckCard => {
-        const cardData = ALL_CARDS.find(c => c.id === deckCard.id);
+        const baseId = deckCard.id.split('_evo')[0];
+        const cardData = ALL_CARDS.find(c => c.id === baseId);
+        
         if (cardData) {
             for (let i = 0; i < deckCard.count; i++) {
-                // カードデータはディープコピーして進化レベルなどを個別管理できるようにする
                 const newCard = JSON.parse(JSON.stringify(cardData));
-                newCard.evolution = newCard.baseEvolution; // 初期進化レベルを設定
-                gameState.deck.push(newCard);
+                newCard.evolution = newCard.baseEvolution; 
+                gameState.masterCardList.push(newCard); 
             }
         }
     });
 
-    shuffle(gameState.deck);
+    setupDeckForNewStage();
 }
 
-// (実装例: startGame)
+/**
+ * マスターカードリストから山札を再構築し、手札を引く (ステージ切り替え/ゲーム開始時)
+ */
+function setupDeckForNewStage() {
+    gameState.discard = [];
+    gameState.hand = [];
+    gameState.deck = JSON.parse(JSON.stringify(gameState.masterCardList)); 
+    shuffle(gameState.deck); 
+
+    drawCard(5); 
+}
+
 export function startGame() {
-    // 状態をリセット
     gameState.currentScore = 0;
     gameState.stage = 1;
     gameState.targetScore = 10;
     gameState.cardsUsedThisTurn = 0;
     gameState.evolutionPhase.active = false;
-
-    // 選択されたデッキを構築
-    setupInitialDeck(); // デッキのセットアップ
-
-    // ターン開始
+    gameState.nextScoreMultiplier = 1; 
+    gameState.costIgnoreCount = 0; 
+    
+    setupInitialDeck(); 
     startTurn();
     updateDisplay();
 }
 
 /**
  * カードを山札から引く
- * @param {number} count - 引く枚数
  */
 export function drawCard(count = 1) {
     for (let i = 0; i < count; i++) {
         if (gameState.deck.length === 0) {
-            // 山札が尽きたら捨て札を山札に戻してシャッフル
             if (gameState.discard.length > 0) {
                 gameState.deck = gameState.discard;
                 gameState.discard = [];
                 shuffle(gameState.deck);
             } else {
-                // 山札も捨て札もない場合はこれ以上引けない
                 return;
             }
         }
@@ -113,8 +121,20 @@ export function drawCard(count = 1) {
  * ターン開始処理
  */
 export function startTurn() {
-    gameState.cardsUsedThisTurn = 0; // 使用枚数リセット
-    drawCard(5); // 初期手札は5枚引く
+    gameState.discard.push(...gameState.hand);
+    gameState.hand = [];
+    gameState.cardsUsedThisTurn = 0;
+    
+    // コンボ効果をリセット
+    gameState.nextScoreMultiplier = 1;
+    gameState.costIgnoreCount = 0; 
+    
+    const cardsToDraw = 5 - gameState.hand.length;
+    if (cardsToDraw > 0) {
+        drawCard(cardsToDraw); 
+    }
+    
+    document.getElementById('end-turn-button').disabled = true;
     updateDisplay();
 }
 
@@ -122,15 +142,10 @@ export function startTurn() {
  * ターン終了処理
  */
 export function endTurn() {
-    // 手札を捨て札に移動
-    gameState.discard.push(...gameState.hand);
-    gameState.hand = [];
-
-    // ステージ達成チェック (この処理は checkStageCompletion() が担うが、ターン終了後もスコアは変わらないため、ここではスキップ)
-
-    // 新しいターンを開始
-    startTurn();
-    updateDisplay();
+    document.getElementById('end-turn-button').disabled = true;
+    if (!checkStageCompletion()) {
+        startTurn();
+    }
 }
 
 /**
@@ -138,110 +153,151 @@ export function endTurn() {
  */
 function checkStageCompletion() {
     if (gameState.currentScore >= gameState.targetScore) {
-        // ステージクリア後の進化処理
         
-        // 進化候補の選定
-        const allCardsInDeck = [...gameState.deck, ...gameState.discard, ...gameState.hand];
-        // 重複を除外
-        const uniqueCards = Array.from(new Set(allCardsInDeck.map(c => c.id.split('_evo')[0]))); 
-
-        gameState.evolutionPhase.candidates = [];
+        const masterListCopy = JSON.parse(JSON.stringify(gameState.masterCardList));
+        shuffle(masterListCopy);
         
-        // ALL_CARDSからカードデータを取得（ディープコピーしてLv.0として扱う）
-        const candidatesData = uniqueCards.map(id => {
-            const baseCard = ALL_CARDS.find(c => c.id === id);
-            return JSON.parse(JSON.stringify(baseCard));
-        });
-        
-        // ランダムに3枚選択 (簡略化のため全種類からランダム選択)
-        shuffle(candidatesData);
-        gameState.evolutionPhase.candidates = candidatesData.slice(0, 3);
+        gameState.evolutionPhase.candidates = masterListCopy.slice(0, 4);
         
         gameState.evolutionPhase.active = true;
-        gameState.evolutionPhase.count = 3; // 進化回数を3に設定
+        gameState.evolutionPhase.count = 3; 
         
-        showEvolutionScreen(); // uiRenderer.jsの関数
+        updateDisplay(); 
+        showEvolutionScreen();
+        return true;
+    }
+    return false;
+}
+
+/**
+ * カードの効果ロジックを実装。Multiplierを全ての数値効果に適用。
+ * @param {object} card - 使用するカードオブジェクト
+ */
+function applyCardEffects(card) {
+    const currentLevel = card.evolution || card.baseEvolution || 0;
+    
+    // 現在の倍率をキャッシュ
+    const currentMultiplier = gameState.nextScoreMultiplier; 
+    
+    // このカードがMultiplier効果を持つか、他の効果を消費したかのフラグ
+    let isNewMultiplierSet = false;
+    let effectConsumed = false;
+
+    // 1. すべての効果をループし、倍率を適用した最終値を計算
+    card.effects.forEach(effect => {
+        const valueKey = Object.keys(effect.params)[0]; 
+        const values = effect.params[valueKey];
+        let value = values[Math.min(currentLevel, values.length - 1)];
+        
+        if (effect.type === 'Multiplier') {
+            // 🌟 修正1: 倍化カードの効果: 次の倍率を上書きではなく、乗算する
+            gameState.nextScoreMultiplier *= value;
+            isNewMultiplierSet = true; // このカードで倍率を設定した
+        }
+        
+        // Multiplier効果自身を除き、Score, Draw, CostIgnoreの**全ての数値**に、乗算前の現在の倍率を適用
+        if (effect.type !== 'Multiplier') {
+            value = Math.floor(value * currentMultiplier); 
+        }
+
+        if (effect.type === 'CostIgnore') {
+            gameState.costIgnoreCount += value;
+            effectConsumed = true; 
+        } else if (effect.type === 'Score') {
+            gameState.currentScore += value; 
+            effectConsumed = true;
+        } else if (effect.type === 'Draw') {
+            if (value > 0) {
+                drawCard(value); 
+                effectConsumed = true;
+            }
+        }
+    });
+    
+    // 2. 倍率の消費
+    // Score, Draw, CostIgnore のいずれかの効果が適用され、かつこのカードでMultiplierを設定していない場合、倍率をリセット
+    if (effectConsumed && !isNewMultiplierSet) {
+        gameState.nextScoreMultiplier = 1; 
     }
 }
+
 
 /**
  * カード使用時のロジック
  * @param {object} card - 使用するカードオブジェクト
  */
 export function useCard(card) {
-    if (gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
-        alert("これ以上カードは使えません。ターンを終了してください。");
+    if (gameState.evolutionPhase.active) return;
+
+    const isCostIgnored = gameState.costIgnoreCount > 0;
+    
+    if (!isCostIgnored && gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
         return;
     }
 
-    // カード効果の適用 (今回はスコアのみを実装)
-    const scoreEffect = card.effects.find(e => e.type === 'Score');
-    if (scoreEffect) {
-        const currentLevel = card.evolution || card.baseEvolution || 0;
-        const scoreValue = scoreEffect.params.score[Math.min(currentLevel, scoreEffect.params.score.length - 1)];
-        // 実際は倍率やコスト無視の処理を考慮する必要があるが、ここでは簡略化
-        gameState.currentScore += scoreValue; 
-    }
+    applyCardEffects(card); 
 
-    // カードを手札から捨て札へ
-    const cardIndex = gameState.hand.findIndex(c => c.id === card.id);
+    const cardIndex = gameState.hand.findIndex(c => c === card);
     if (cardIndex !== -1) {
         const usedCard = gameState.hand.splice(cardIndex, 1)[0];
         gameState.discard.push(usedCard);
     }
     
-    // 使用枚数カウント
-    gameState.cardsUsedThisTurn++;
+    if (isCostIgnored) {
+        gameState.costIgnoreCount--; 
+    } else {
+        gameState.cardsUsedThisTurn++; 
+    }
     
-    drawCard(1); // 1枚ドロー (簡略化)
-    
-    renderHand(); // uiRenderer.jsの関数
-    checkStageCompletion();
+    renderHand();
     updateDisplay();
+
+    if (gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
+        endTurn();
+    }
 }
 
 /**
  * 進化画面でカードが選択されたときの処理
- * @param {object} baseCard - 進化対象として選ばれたベースカードデータ
  */
 export function selectEvolutionCard(baseCard) {
     if (gameState.evolutionPhase.count <= 0 || !gameState.evolutionPhase.active) return;
     
-    // 選択されたカードと同じID（ベースID）を持つカードを山札/捨て札/手札から探して進化させる
-    const baseId = baseCard.id;
+    const baseId = baseCard.id; 
+    const searchId = baseId.split('_evo')[0];
     
-    const allCards = [...gameState.deck, ...gameState.discard, ...gameState.hand];
-    
-    // 実際に進化させるカード
-    const targetCard = allCards.find(c => c.id.split('_evo')[0] === baseId && (c.evolution || c.baseEvolution || 0) < 2);
+    const targetCard = gameState.masterCardList.find(c => c.id.split('_evo')[0] === searchId && (c.evolution || c.baseEvolution || 0) < 2);
     
     if (targetCard) {
-        applyEvolution(targetCard); // cards.jsの関数で進化レベルを上げる
-        gameState.evolutionPhase.count--; // 進化回数を減らす
+        applyEvolution(targetCard);
     } else {
-        // すべて最大レベルの場合、進化回数を消費するだけ
         alert(`${baseCard.name} は全て最大レベルです。`);
-        gameState.evolutionPhase.count--;
     }
     
-    // 残り回数を更新
+    gameState.evolutionPhase.count--; 
     document.getElementById('evo-count').textContent = gameState.evolutionPhase.count;
 
-    if (gameState.evolutionPhase.count <= 0) {
-        // 進化フェーズ終了
+    if (gameState.evolutionPhase.count > 0) {
+        const masterListCopy = JSON.parse(JSON.stringify(gameState.masterCardList));
+        shuffle(masterListCopy);
+        gameState.evolutionPhase.candidates = masterListCopy.slice(0, 4);
+        showEvolutionScreen(); 
+    }
+    else if (gameState.evolutionPhase.count <= 0) {
         gameState.evolutionPhase.active = false;
         
-        // 次のステージへ
         gameState.stage++;
-        gameState.targetScore *= 2; // 目標スコアを倍にする
+        gameState.targetScore *= 2; 
+        gameState.currentScore = 0;
         
-        // オーバレイを非表示にし、ゲームを続行
+        setupDeckForNewStage(); 
+        
         document.getElementById('overlay').classList.add('hidden');
         document.getElementById('evolution-screen').classList.add('hidden');
 
-        // 新しいターンを開始
         startTurn();
     }
     
     updateDisplay();
+    renderHand();
 }
