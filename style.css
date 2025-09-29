@@ -2,24 +2,18 @@
 
 /* --- 基本設定 --- */
 :root {
-    /* 背景色を明るいポップなトーンに変更 */
-    --bg-color: #f0f0f5;             /* 非常に薄いグレー/ラベンダー */
-    --primary-bg-color: #ffffff;     /* 白 */
-    --secondary-bg-color: #e6e6fa;   /* 薄いラベンダー */
-    
-    /* 文字色を暗く */
-    --text-color: #333333;           /* 濃いグレー */
-    --text-muted-color: #6a6a6a;     /* 中間グレー */
-    
-    /* アクセントカラーをポップなシアン系に変更 */
-    --accent-color: #00bcd4;         /* シアン */
-    --border-color: #cccccc;         /* 薄いグレーの境界線 */
-    
-    /* ステータス/ボタン色も明るくポップに */
+    /* (前回の色設定は省略) */
+    --bg-color: #f0f0f5;
+    --primary-bg-color: #ffffff;
+    --secondary-bg-color: #e6e6fa;
+    --text-color: #333333;
+    --text-muted-color: #6a6a6a;
+    --accent-color: #00bcd4;
+    --border-color: #cccccc;
     --success-color: #4CAF50;
-    --warning-color: #ff9800;        /* オレンジ */
-    --danger-color: #ff5252;         /* 鮮やかな赤 */
-    --primary-button-bg: #673ab7;    /* 濃い目の紫 */
+    --warning-color: #ff9800;
+    --danger-color: #ff5252;
+    --primary-button-bg: #673ab7;
     --primary-button-hover-bg: #5e35b1;
     --secondary-button-bg: #90a4ae;
     --secondary-button-hover-bg: #78909c;
@@ -41,11 +35,11 @@ body {
 #game-container,
 .screen {
     width: 100%;
-    max-width: 1300px;
+    /* ★ 修正: PCでの5枚表示に対応するため、最大幅を広く設定 */
+    max-width: 1500px;
     background-color: var(--primary-bg-color);
     border-radius: 16px;
     padding: 25px;
-    /* 明るい背景に合うようにシャドウを調整 */
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
     border: 1px solid var(--border-color);
 }
@@ -56,7 +50,7 @@ body {
     gap: 20px;
 }
 
-/* --- ヘッダー/フッター --- */
+/* --- ヘッダー/フッター (省略) --- */
 header,
 footer {
     display: flex;
@@ -89,9 +83,9 @@ footer {
     padding: 20px;
     display: flex;
     flex-wrap: wrap;
-    gap: 20px;
+    /* カード間のギャップを調整 */
+    gap: 15px;
     justify-content: center;
-    /* 背景を明るいトーンに変更 */
     background-color: rgba(0, 0, 0, 0.05);
     border-radius: 12px;
     border: 1px dashed var(--border-color);
@@ -108,13 +102,14 @@ footer {
 
 /* --- 🃏 カード共通スタイル 🃏 --- */
 .card {
-    width: 220px;
-    min-height: 300px;
-    /* カードの背景を明るく、立体感を強調 */
+    /* ★ 修正: カードの幅を縮小し、5枚横並びに対応 (1500px / 5枚 = 300px -> gap込みで調整) */
+    width: 200px;
+    min-height: 270px;
+    /* 高さも少し調整 */
     background: linear-gradient(145deg, #f9f9f9, #e9e9e9);
     border-radius: 15px;
-    padding: 20px;
-    /* 明るい背景に合うシャドウをさらに強調 */
+    padding: 15px;
+    /* パディングも少し減らす */
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2), 0 0 5px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
@@ -122,8 +117,16 @@ footer {
     flex-direction: column;
     position: relative;
     overflow: hidden;
-    /* ★ 修正: デフォルトの枠線を薄いシアンにして視認性を向上 */
-    border: 2px solid #b3e5fc; 
+    border: 2px solid #b3e5fc;
+}
+
+/* カード名や効果文のサイズを調整して小さなカードに収める */
+.card-name {
+    font-size: 1.3em;
+}
+
+.card-effect {
+    font-size: 0.95em;
 }
 
 .card::before {
@@ -143,7 +146,7 @@ footer {
     transform: translateY(-8px) scale(1.03);
     /* ★ 修正: ホバー時のシャドウと枠線を大幅に強調 */
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3), 0 0 20px var(--accent-color);
-    border-color: var(--primary-button-bg); 
+    border-color: var(--primary-button-bg);
 }
 
 .card:hover::before {
@@ -153,7 +156,8 @@ footer {
 .card.used {
     opacity: 0.7;
     cursor: default;
-    background: #e0e0e0; /* 使用済みカードも明るいグレーに */
+    background: #e0e0e0;
+    /* 使用済みカードも明るいグレーに */
     transform: none;
     box-shadow: none;
 }
@@ -207,7 +211,8 @@ button {
 }
 
 button:disabled {
-    background-color: #bdbdbd; /* 明るいグレーに */
+    background-color: #bdbdbd;
+    /* 明るいグレーに */
     cursor: not-allowed;
     box-shadow: none;
     opacity: 0.7;
@@ -233,7 +238,8 @@ button:not(:disabled):hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(5px); /* ブラーを維持 */
+    backdrop-filter: blur(5px);
+    /* ブラーを維持 */
 }
 
 .hidden {
@@ -276,7 +282,8 @@ button:not(:disabled):hover {
 
 .card-level {
     font-weight: bold;
-    color: var(--primary-button-bg); /* レベル色を紫に変更 */
+    color: var(--primary-button-bg);
+    /* レベル色を紫に変更 */
     margin-bottom: 10px;
     font-size: 1.2em;
 }
@@ -285,7 +292,8 @@ button:not(:disabled):hover {
     border: 1px solid var(--border-color);
     padding: 15px;
     margin-top: 15px;
-    background-color: var(--secondary-bg-color); /* 薄いラベンダーの背景 */
+    background-color: var(--secondary-bg-color);
+    /* 薄いラベンダーの背景 */
     border-radius: 8px;
     text-align: left;
 }
@@ -356,7 +364,8 @@ button:not(:disabled):hover {
 }
 
 .deck-item:hover {
-    background-color: #d1c4e9; /* ホバー色を調整 */
+    background-color: #d1c4e9;
+    /* ホバー色を調整 */
 }
 
 .deck-name-display {
@@ -387,7 +396,8 @@ button:not(:disabled):hover {
 }
 
 .deck-select-item input[type="radio"]:checked+.deck-name-display {
-    color: var(--primary-button-bg); /* 選択色をプライマリボタン色に */
+    color: var(--primary-button-bg);
+    /* 選択色をプライマリボタン色に */
     font-weight: bold;
 }
 
@@ -427,7 +437,8 @@ button:not(:disabled):hover {
     padding: 10px;
     border: 1px solid var(--border-color);
     margin: 20px 0;
-    background-color: #fcfcff; /* 非常に明るい背景 */
+    background-color: #fcfcff;
+    /* 非常に明るい背景 */
     border-radius: 8px;
 }
 
@@ -445,17 +456,18 @@ button:not(:disabled):hover {
 
 /* ★ 修正: カード情報表示エリアを追加し、左寄せを確保 */
 .edit-card-info {
-    flex-grow: 1; 
-    text-align: left; 
-    padding-right: 15px; /* コントロールとの間に少し間隔をあける */
+    flex-grow: 1;
+    text-align: left;
+    padding-right: 15px;
+    /* コントロールとの間に少し間隔をあける */
 }
 
 .edit-card-item .card-name {
     font-size: 1.2em;
     /* 中央寄せを防ぐための設定を維持 */
-    text-align: left; 
-    width: 100%; 
-    display: flex; 
+    text-align: left;
+    width: 100%;
+    display: flex;
     align-items: center;
 }
 
@@ -469,7 +481,8 @@ button:not(:disabled):hover {
     /* 追加 */
     align-items: center;
     /* 追加: 縦方向中央揃え */
-    flex-shrink: 0; /* サイズ変更をしないように設定 */
+    flex-shrink: 0;
+    /* サイズ変更をしないように設定 */
 }
 
 .edit-controls button {
@@ -553,4 +566,54 @@ button:not(:disabled):hover {
 .edit-card-item .card-next-effect.max-level {
     color: var(--text-muted-color);
     /* カンスト表示はミュート色 */
+}
+
+/* --- 📱 スマホ画面対応 (3枚横並び) --- */
+@media (max-width: 992px) {
+    #game-container,
+    .screen {
+        /* タブレット・スマホの中間サイズでは最大幅を調整 */
+        max-width: 100%; 
+        padding: 15px;
+    }
+    
+    .card {
+        /* ★ 修正: 画面幅が狭い場合、カードの幅を相対的に広げて3枚並ぶように調整 */
+        /* (100% - 2 * gap) / 3 ≈ 33.3% - α */
+        width: calc(33.33% - 15px); /* 3枚並び + ギャップ15px */
+        min-height: 250px;
+        padding: 12px;
+    }
+
+    .card-area {
+        gap: 10px; /* ギャップをさらに狭く */
+        padding: 10px;
+    }
+}
+
+/* --- 📱 極小画面対応 (2枚以下も自動的に対応) --- */
+@media (max-width: 576px) {
+     .card {
+        /* 画面幅が非常に狭い場合は2枚並び (例) */
+        width: calc(50% - 10px); 
+        min-height: 220px;
+        font-size: 0.9em;
+    }
+    
+    #game-container {
+        padding: 10px;
+    }
+    
+    /* カード名や効果文のサイズをさらに調整 */
+    .card-name {
+        font-size: 1.1em;
+    }
+    .card-effect {
+        font-size: 0.85em;
+    }
+
+    /* デッキ編集画面のレイアウトも調整 */
+    #deck-edit-overlay .screen {
+        padding: 20px;
+    }
 }

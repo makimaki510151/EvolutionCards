@@ -16,7 +16,7 @@ const STORAGE_KEY_DECKS = 'roguelite_decks';
 const MAX_DECK_SIZE = 20; // デッキの最大枚数
 
 export const INITIAL_DECK_TEMPLATE = {
-    name: "初心者デッキ (改)",
+    name: "初心者デッキ",
     cards: [
         { id: 'score_1', count: 8 },         // 8枚 (基本点)
         { id: 'score_2', count: 4 },         // 4枚 (加速点)
