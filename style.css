@@ -1,167 +1,211 @@
-/* style.css - 統合・整理版 */
+/* style.css - デザイン改修版 */
 
 /* --- 基本設定 --- */
+:root {
+    --bg-color: #1a1a1a;
+    --primary-bg-color: #2c2c2c;
+    --secondary-bg-color: #3a3a3a;
+    --text-color: #e0e0e0;
+    --text-muted-color: #a0a0a0;
+    --accent-color: #ffd700;
+    --border-color: #4a4a4a;
+    --success-color: #4CAF50;
+    --warning-color: #ffc107;
+    --danger-color: #ff4d4d;
+    --primary-button-bg: #007bff;
+    --primary-button-hover-bg: #0056b3;
+    --secondary-button-bg: #6c757d;
+    --secondary-button-hover-bg: #5a6268;
+}
+
 body {
-    font-family: Arial, sans-serif;
-    background-color: #222;
-    color: #eee;
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     margin: 0;
     padding: 20px;
     display: flex;
     justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+#game-container, .screen {
+    width: 100%;
+    max-width: 1300px;
+    background-color: var(--primary-bg-color);
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+    border: 1px solid var(--border-color);
 }
 
 #game-container {
-    width: 100%;
-    max-width: 1200px; /* カード拡大に合わせて最大幅を拡大 */
-    background-color: #333;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-/* --- ヘッダー/情報表示エリア --- */
-header {
+/* --- ヘッダー/フッター --- */
+header, footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #555;
-    margin-bottom: 20px;
+    padding: 15px 20px;
+    background-color: var(--secondary-bg-color);
+    border-radius: 12px;
 }
 
-#info-area {
-    display: flex;
-    justify-content: space-around;
-    padding: 10px;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background-color: #333;
+/* --- 情報表示エリア --- */
+#stage-info, #score-info, #turn-info, .deck-status {
+    font-size: 1.1em;
+    font-weight: 500;
+}
+
+#score-info span, #turn-info span, .deck-status span {
+    color: var(--accent-color);
+    font-weight: bold;
 }
 
 /* --- カードエリア/手札 --- */
 .card-area {
-    min-height: 150px;
-    padding: 10px 0;
+    min-height: 280px;
+    padding: 20px;
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
-}
-
-#hand-area {
-    border: 1px solid #444;
-    padding: 10px;
-    border-radius: 8px;
-    background-color: #333;
+    gap: 20px;
+    justify-content: center;
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 12px;
+    border: 1px dashed var(--border-color);
 }
 
 #hand-area h2 {
     width: 100%;
-    margin-bottom: 15px;
-    font-size: 1.2em;
-    color: #fff;
+    margin: -10px 0 10px 0;
+    font-size: 1.4em;
+    color: var(--text-muted-color);
+    text-align: center;
+    font-weight: 300;
 }
 
-
-/* --- 🃏 カード共通スタイル (サイズ拡大) 🃏 --- */
+/* --- 🃏 カード共通スタイル 🃏 --- */
 .card {
-    width: 280px; /* 2倍以上に拡大 */
-    min-height: 200px; /* 最小高さを確保し、長文に対応 */
-    background-color: #444;
-    border: 2px solid #666;
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-    transition: transform 0.1s;
+    width: 220px;
+    min-height: 300px;
+    background: linear-gradient(145deg, #414141, #343434);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.5), -5px -5px 15px rgba(255,255,255,0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
     display: flex;
     flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid transparent;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 50%);
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
 .card:hover {
-    transform: translateY(-3px);
-    border-color: #ffcc00;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.6);
+    transform: translateY(-8px) scale(1.03);
+    box-shadow: 10px 10px 25px rgba(0,0,0,0.7), -5px -5px 15px rgba(255,255,255,0.05);
+    border-color: var(--accent-color);
+}
+
+.card:hover::before {
+    opacity: 1;
 }
 
 .card.used {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: default;
-    background-color: #555;
+    background: #333;
+    transform: none;
+    box-shadow: none;
 }
 
 .card-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #555;
-    padding-bottom: 5px;
+    align-items: baseline;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
 }
 
 .card-name {
     font-weight: bold;
-    font-size: 1.2em;
-    color: #fff;
+    font-size: 1.5em;
+    color: var(--accent-color);
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
 }
 
 .card-type {
     font-size: 0.9em;
-    color: #bbb;
+    color: var(--text-muted-color);
+    background-color: rgba(0,0,0,0.3);
+    padding: 3px 8px;
+    border-radius: 20px;
 }
 
 .card-effect {
-    font-size: 1em;
-    color: #ccc;
-    line-height: 1.4;
+    font-size: 1.05em;
+    color: var(--text-color);
+    line-height: 1.5;
     flex-grow: 1;
+    margin-top: 10px;
 }
 
-/* --- フッター --- */
-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 2px solid #555;
-    padding-top: 20px;
-    margin-top: 20px;
-}
-
-#end-turn-button {
-    padding: 10px 20px;
-    font-size: 1em;
-    background-color: #007bff;
+/* --- ボタン --- */
+button {
+    padding: 12px 24px;
+    font-size: 1.1em;
+    font-weight: bold;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
+    background-color: var(--primary-button-bg);
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
 }
 
-#end-turn-button:disabled {
+button:disabled {
     background-color: #555;
     cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
 }
 
-#end-turn-button:not(:disabled):hover {
-    background-color: #0056b3;
+button:not(:disabled):hover {
+    background-color: var(--primary-button-hover-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
 }
-
 
 /* --- 画面/オーバーレイ共通 --- */
-#overlay {
+#overlay, #deck-edit-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.7);
     z-index: 100;
     display: flex;
     justify-content: center;
     align-items: center;
+    backdrop-filter: blur(8px);
 }
 
 .hidden {
@@ -169,83 +213,81 @@ footer {
 }
 
 .screen {
-    background: #333;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.9);
+    padding: 40px;
+    border-radius: 20px;
     width: 90%;
-    max-width: 1000px;
+    max-width: 1200px;
     text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-
 /* --- 🎨 進化画面 (Evolution Screen) 🎨 --- */
-#evolution-screen {
-    max-width: 1200px;
+#evolution-screen h2 {
+    font-size: 2.2em;
+    color: var(--accent-color);
 }
 
 #evolution-choices {
     display: flex;
-    justify-content: space-around;
-    gap: 20px;
-    margin-top: 20px;
+    justify-content: center;
+    gap: 25px;
+    margin-top: 30px;
     flex-wrap: wrap;
 }
 
 .evolution-card-wrapper .card {
-    cursor: pointer;
-    border: 3px solid #ffcc00;
-    width: 220px;
-    min-height: 250px;
+    border: 3px solid var(--accent-color);
 }
 
 .evolution-card-wrapper .card:hover {
-    transform: scale(1.05);
-    border-color: #ff0;
+    border-color: #fff;
+    box-shadow: 0 0 25px var(--accent-color);
 }
 
-/* 🌟 進化比較表示のスタイル 🌟 */
 .card-level {
     font-weight: bold;
-    color: #ffcc00;
-    margin-bottom: 5px;
-    font-size: 1.1em;
-}
-
-.card-effect-comparison {
-    border-top: 1px solid #555;
-    padding-top: 8px;
-    flex-grow: 1;
-}
-
-/* 🌟 効果の説明文全体比較のスタイル */
-.effect-description-comparison {
-    border: 1px dashed #666;
-    padding: 10px;
+    color: var(--accent-color);
     margin-bottom: 10px;
-    background-color: #3a3a3a;
+    font-size: 1.2em;
+}
+
+.effect-description-comparison {
+    border: 1px solid var(--border-color);
+    padding: 15px;
+    margin-top: 15px;
+    background-color: rgba(0,0,0,0.2);
+    border-radius: 8px;
     text-align: left;
 }
 
 .effect-description-comparison p {
-    margin: 5px 0;
-    font-size: 0.9em;
+    margin: 8px 0;
+    font-size: 1em;
 }
 
 .current-full-text {
-    color: #ccc; /* 現在の説明文 */
+    color: var(--text-muted-color);
 }
 
 .next-full-text-improved {
-    color: #66ff66; /* 進化後の説明文を強調 */
+    color: var(--success-color);
     font-weight: bold;
 }
 
-/* --- その他の画面/コンポーネント (Deck Management, Title Screen) --- */
+/* --- その他の画面/コンポーネント --- */
 #title-screen h1 {
-    font-size: 2.5em;
-    color: #ffd700;
-    margin-bottom: 40px;
+    font-size: 4em;
+    color: var(--accent-color);
+    margin-bottom: 10px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-shadow: 0 0 15px var(--accent-color);
+}
+#title-screen h2 {
+    font-size: 1.5em;
+    color: var(--text-muted-color);
+    margin-bottom: 50px;
+    font-weight: 300;
 }
 
 #title-screen button,
@@ -253,40 +295,48 @@ footer {
 #deck-management-screen button {
     display: block;
     width: 80%;
-    margin: 15px auto;
-    padding: 15px;
-    font-size: 1.2em;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 18px;
+    font-size: 1.3em;
 }
 
-#deck-management-screen button:last-of-type {
-    background-color: #6c757d;
+#deck-management-screen button[data-action="delete"] {
+    background-color: var(--danger-color);
+}
+#deck-management-screen button[data-action="delete"]:hover {
+    background-color: #c82333;
 }
 
-/* デッキリストのスタイル */
+/* デッキリスト */
 .deck-item {
-    padding: 10px;
-    border: 1px solid #555;
-    border-radius: 5px;
-    margin-bottom: 10px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 15px;
     text-align: left;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    background-color: #444;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--secondary-bg-color);
+    transition: background-color 0.2s;
+}
+.deck-item:hover {
+    background-color: #454545;
 }
 
-.deck-item>div:first-child {
-    margin-bottom: 10px;
+.deck-name-display {
+    font-size: 1.2em;
+    font-weight: 500;
 }
 
 .deck-actions {
     display: flex;
     gap: 10px;
+}
+.deck-actions button {
+    padding: 8px 16px;
+    font-size: 0.9em;
 }
 
 .deck-select-item label {
@@ -294,101 +344,90 @@ footer {
     align-items: center;
     width: 100%;
     cursor: pointer;
-    padding: 5px 0;
 }
 
-.deck-item input[type="radio"] {
-    margin-right: 10px;
+.deck-select-item input[type="radio"] {
+    transform: scale(1.5);
+    margin-right: 20px;
 }
 
-.deck-select-item input[type="radio"]:checked+.deck-name-display {
-    color: #ffd700;
+.deck-select-item input[type="radio"]:checked + .deck-name-display {
+    color: var(--accent-color);
     font-weight: bold;
 }
 
 /* デッキ編集オーバーレイ */
-#deck-edit-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
+#deck-edit-overlay .screen {
+    max-width: 800px;
+}
+
+#edit-deck-name {
     width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.9);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 110;
+    padding: 12px;
+    font-size: 1.2em;
+    background-color: var(--secondary-bg-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 8px;
+    margin-bottom: 15px;
 }
 
 #card-edit-list {
-    max-height: 300px;
+    max-height: 400px;
     overflow-y: auto;
     padding: 10px;
-    border: 1px solid #555;
-    margin: 15px 0;
-    background-color: #2a2a2a;
+    border: 1px solid var(--border-color);
+    margin: 20px 0;
+    background-color: var(--bg-color);
+    border-radius: 8px;
 }
 
 .edit-card-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px dashed #444;
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
 }
-
 .edit-card-item:last-child {
     border-bottom: none;
 }
+.edit-card-item .card-effect { font-size: 0.9em; }
+.edit-card-item .card-name { font-size: 1.2em; }
 
 .edit-controls button {
-    width: 30px;
-    height: 30px;
-    font-size: 1.2em;
-    margin: 0 5px;
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    font-size: 1.5em;
+    margin: 0 8px;
+    background-color: var(--secondary-button-bg);
+    border-radius: 50%;
 }
 
 .card-count {
-    width: 20px;
+    width: 30px;
     display: inline-block;
     text-align: center;
     font-weight: bold;
+    font-size: 1.2em;
 }
 
-#save-deck-button:disabled {
-    background-color: #555;
-    cursor: not-allowed;
+#current-deck-size {
+    font-size: 1.2em;
 }
-
 #current-deck-size span.size-over {
-    color: #ff4d4d;
+    color: var(--danger-color);
     font-weight: bold;
-    animation: pulse-red 0.5s infinite alternate;
 }
-
 #current-deck-size span.size-ok {
-    color: #4CAF50;
+    color: var(--success-color);
     font-weight: bold;
 }
-
 #current-deck-size span.size-short {
-    color: #ffc107;
-    font-weight: normal;
+    color: var(--warning-color);
 }
 
 @keyframes pulse-red {
-    from {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    to {
-        opacity: 0.7;
-        transform: scale(1.05);
-    }
+    from { opacity: 1; }
+    to { opacity: 0.7; }
 }
