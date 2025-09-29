@@ -125,7 +125,6 @@ export function startTurn() {
     gameState.hand = [];
     gameState.cardsUsedThisTurn = 0;
     
-    // コンボ効果をリセット
     gameState.nextScoreMultiplier = 1;
     gameState.costIgnoreCount = 0; 
     
@@ -139,10 +138,11 @@ export function startTurn() {
 }
 
 /**
- * ターン終了処理
+ * ターン終了処理 (自動進行のみで使用される)
  */
 export function endTurn() {
     document.getElementById('end-turn-button').disabled = true;
+    // endTurnが呼ばれた時点でステージ達成していないか最終チェック
     if (!checkStageCompletion()) {
         startTurn();
     }
@@ -150,10 +150,15 @@ export function endTurn() {
 
 /**
  * ステージ達成チェック
+ * @returns {boolean} - ステージ達成したかどうか
  */
 function checkStageCompletion() {
     if (gameState.currentScore >= gameState.targetScore) {
         
+        // 🌟 修正1: 軽い演出（アラート）で中断を知らせる
+        alert(`ステージ${gameState.stage}クリア！目標点 ${gameState.targetScore} を達成しました。進化フェーズへ移行します。`); 
+        
+        // ターンを強制的に中断し、進化フェーズへ移行
         const masterListCopy = JSON.parse(JSON.stringify(gameState.masterCardList));
         shuffle(masterListCopy);
         
@@ -176,23 +181,20 @@ function checkStageCompletion() {
 function applyCardEffects(card) {
     const currentLevel = card.evolution || card.baseEvolution || 0;
     
-    // 現在の倍率をキャッシュ
     const currentMultiplier = gameState.nextScoreMultiplier; 
     
-    // このカードがMultiplier効果を持つか、他の効果を消費したかのフラグ
     let isNewMultiplierSet = false;
     let effectConsumed = false;
 
-    // 1. すべての効果をループし、倍率を適用した最終値を計算
     card.effects.forEach(effect => {
         const valueKey = Object.keys(effect.params)[0]; 
         const values = effect.params[valueKey];
         let value = values[Math.min(currentLevel, values.length - 1)];
         
         if (effect.type === 'Multiplier') {
-            // 🌟 修正1: 倍化カードの効果: 次の倍率を上書きではなく、乗算する
+            // 倍化カードの効果: 次の倍率を乗算する
             gameState.nextScoreMultiplier *= value;
-            isNewMultiplierSet = true; // このカードで倍率を設定した
+            isNewMultiplierSet = true;
         }
         
         // Multiplier効果自身を除き、Score, Draw, CostIgnoreの**全ての数値**に、乗算前の現在の倍率を適用
@@ -214,7 +216,6 @@ function applyCardEffects(card) {
         }
     });
     
-    // 2. 倍率の消費
     // Score, Draw, CostIgnore のいずれかの効果が適用され、かつこのカードでMultiplierを設定していない場合、倍率をリセット
     if (effectConsumed && !isNewMultiplierSet) {
         gameState.nextScoreMultiplier = 1; 
@@ -235,14 +236,23 @@ export function useCard(card) {
         return;
     }
 
+    // 🌟 カード効果を適用
     applyCardEffects(card); 
 
+    // 🌟 修正2: 効果適用直後にステージ達成をチェックし、達成していればターン中断
+    if (checkStageCompletion()) {
+        // ステージ達成した場合、以降の処理（使用枚数カウント、ターン終了チェック）は不要
+        return;
+    }
+
+    // カードを手札から捨て札へ
     const cardIndex = gameState.hand.findIndex(c => c === card);
     if (cardIndex !== -1) {
         const usedCard = gameState.hand.splice(cardIndex, 1)[0];
         gameState.discard.push(usedCard);
     }
     
+    // 使用枚数カウントのロジック
     if (isCostIgnored) {
         gameState.costIgnoreCount--; 
     } else {
@@ -252,6 +262,7 @@ export function useCard(card) {
     renderHand();
     updateDisplay();
 
+    // カード使用回数の上限に達した場合
     if (gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
         endTurn();
     }

@@ -1,7 +1,7 @@
 // uiRenderer.js
 
-import { gameState, useCard, selectEvolutionCard, endTurn } from './gameCore.js'; // <- selectEvolutionCard と endTurn を追加
-import { generateEffectText } from './cards.js';
+import { gameState, useCard, selectEvolutionCard, endTurn } from './gameCore.js';
+import { generateEffectText, generateFullEffectText } from './cards.js';
 
 // --- DOM要素の取得 ---
 const $handArea = document.getElementById('hand-area');
@@ -33,25 +33,64 @@ export function updateDisplay() {
     $endTurnButton.disabled = gameState.evolutionPhase.active;
 }
 
-/** カードDOM要素の生成 */
-export function createCardElement(card, isEvolutionChoice = false) {
+/**
+ * カードDOM要素を作成する
+ * @param {object} card - カードオブジェクト
+ * @param {boolean} isEvolutionChoice - 進化候補カードかどうか
+ * @returns {HTMLElement} - 作成されたカード要素
+ */
+function createCardElement(card, isEvolutionChoice = false) {
     const cardEl = document.createElement('div');
-    cardEl.className = `card ${isEvolutionChoice ? 'evolution-choice-card' : ''}`;
-
-    // カードデータには進化レベルが格納されているため、それを generateEffectText に渡す
-    const cardData = {
-        ...card,
-        evolution: card.evolution // card.evolutionを使用
-    };
-    const effectHtml = generateEffectText(cardData);
-
-    cardEl.innerHTML = `
-        <div class="card-title">${card.name}</div>
-        ${effectHtml}
-    `;
+    cardEl.className = 'card';
     cardEl.dataset.id = card.id;
-    // イベントリスナーはここで設定
-    cardEl.onclick = () => isEvolutionChoice ? selectEvolutionCard(card) : useCard(card); // gameCore.jsの関数を呼び出し
+    cardEl.dataset.name = card.name;
+
+    let htmlContent = `
+        <div class="card-header">
+            <span class="card-name">${card.name}</span>
+            <span class="card-type">${card.type}</span>
+        </div>
+    `;
+
+    if (isEvolutionChoice) {
+        // 進化画面での表示 (レベルと効果の説明文の比較のみ)
+        const currentLevel = card.evolution || card.baseEvolution || 0;
+        const nextLevel = Math.min(currentLevel + 1, 2);
+
+        const currentDisplayLevel = currentLevel + 1;
+        const nextDisplayLevel = nextLevel + 1;
+
+        // 🌟 修正1: generateFullEffectText を使って完全な説明文を取得
+        const currentFullText = generateFullEffectText(card, currentLevel);
+        const nextFullText = generateFullEffectText(card, nextLevel);
+
+        // 🌟 修正2: 効果の移り変わりを表示するセクションのみを使用
+        let comparisonHtml = `
+            <div class="effect-description-comparison">
+                <p>現在 (Lv.${currentDisplayLevel}): <span class="current-full-text">${currentFullText}</span></p>
+                <p>進化後 (Lv.${nextDisplayLevel}): <span class="next-full-text-improved">${nextFullText}</span></p>
+            </div>
+        `;
+
+        // レベル表示
+        htmlContent += `<p class="card-level">Lv.${currentDisplayLevel} → Lv.${nextDisplayLevel}</p>`;
+
+        // 🌟 修正3: 全体の効果説明のみを表示
+        htmlContent += `<div class="card-effect-comparison">`;
+        htmlContent += comparisonHtml;
+        // 詳細な値の比較部分は完全に削除
+        htmlContent += `</div>`;
+
+        // クリックイベントの設定
+        cardEl.addEventListener('click', () => selectEvolutionCard(card));
+
+    } else {
+        // 通常の手札表示の場合
+        htmlContent += generateEffectText(card);
+        cardEl.addEventListener('click', () => useCard(card));
+    }
+
+    cardEl.innerHTML = htmlContent;
     return cardEl;
 }
 
@@ -78,14 +117,37 @@ export function showEvolutionScreen() {
 
 export function renderEvolutionChoices() {
     $evolutionChoices.innerHTML = '';
-    // 候補カードはベースデータとして扱うため、進化レベルを強制的に0にする
+
+    // 候補カードはマスターリストからのコピーですが、
+    // 選択フェーズ中にレベルが更新された場合に備え、masterCardListから最新レベルを取得します。
     gameState.evolutionPhase.candidates.forEach(card => {
-        const baseCard = JSON.parse(JSON.stringify(card));
-        baseCard.evolution = 0; // 表示用として強制的に0にする
-        
+
+        // 🌟 修正: masterCardListから現在の最新のレベルを取得し、候補カードのコピーに適用する
+        const searchId = card.id.split('_evo')[0];
+        // masterCardListの中から、IDが一致する最新のカードデータを見つける
+        const masterCard = gameState.masterCardList.find(c => c.id.split('_evo')[0] === searchId);
+
+        // 表示用のカードオブジェクトをディープコピー
+        const cardToDisplay = JSON.parse(JSON.stringify(card));
+
+        // masterCardが見つかった場合、その最新のレベルを反映させる
+        if (masterCard) {
+            const currentLevel = masterCard.evolution !== undefined ? masterCard.evolution : masterCard.baseEvolution;
+            if (currentLevel !== undefined) {
+                // コピーしたカードのレベル情報（evolutionまたはbaseEvolution）を最新レベルで上書きする
+                if (cardToDisplay.evolution !== undefined) {
+                    cardToDisplay.evolution = currentLevel;
+                } else if (cardToDisplay.baseEvolution !== undefined) {
+                    cardToDisplay.baseEvolution = currentLevel;
+                }
+            }
+        }
+
+        // cardToDisplayを使用し、カード要素を作成
         const cardWrapper = document.createElement('div');
         cardWrapper.className = 'evolution-card-wrapper';
-        const cardEl = createCardElement(baseCard, true);
+        // cardToDisplayには、以前の選択でレベルアップした最新の情報が反映されています
+        const cardEl = createCardElement(cardToDisplay, true); // isEvolutionChoice = true
         cardWrapper.appendChild(cardEl);
         $evolutionChoices.appendChild(cardWrapper);
     });

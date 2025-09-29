@@ -1,32 +1,34 @@
+// cards.js
+
 // カードの基本データ (複数効果、レベル対応)
 export const ALL_CARDS = [
     // 1. 基本点カード (レベルアップでスコア増加)
-    { 
-        id: 'score_1', 
-        name: '基本点', 
-        type: 'Score', 
+    {
+        id: 'score_1',
+        name: '基本点',
+        type: 'Score',
         baseEvolution: 0, // 初期レベル
         effects: [
             {
                 type: 'Score',
                 description: '{value}点獲得',
-                params: { 
+                params: {
                     score: [2, 4, 6] // Lv.0, Lv.1, Lv.2 のスコア値
                 }
             }
         ]
     },
     // 2. 加速点カード (レベルアップでスコア増加とドロー効果を追加)
-    { 
-        id: 'score_2', 
-        name: '加速点', 
-        type: 'Score', 
+    {
+        id: 'score_2',
+        name: '加速点',
+        type: 'Score',
         baseEvolution: 0,
         effects: [
             {
                 type: 'Score',
                 description: '{value}点獲得',
-                params: { 
+                params: {
                     score: [4, 6, 8]
                 }
             },
@@ -40,10 +42,10 @@ export const ALL_CARDS = [
         ]
     },
     // 3. 倍化カード (レベルアップで倍率強化)
-    { 
-        id: 'combo_x2', 
-        name: '倍化', 
-        type: 'Buff', 
+    {
+        id: 'combo_x2',
+        name: '倍化',
+        type: 'Buff',
         baseEvolution: 0,
         effects: [
             {
@@ -56,10 +58,10 @@ export const ALL_CARDS = [
         ]
     },
     // 4. クイックカード (レベルアップで無視回数を増加)
-    { 
-        id: 'combo_ignore', 
-        name: 'クイック', 
-        type: 'Cost', 
+    {
+        id: 'combo_ignore',
+        name: 'クイック',
+        type: 'Cost',
         baseEvolution: 0,
         effects: [
             {
@@ -74,30 +76,66 @@ export const ALL_CARDS = [
 ];
 
 /**
- * 指定されたカードと進化レベルに基づき、その効果をまとめたテキストを生成する。
+ * カードの指定されたレベルにおける効果（テキストと値）のリストを取得する。（既存関数）
+ * @param {object} card - カードオブジェクト
+ * @param {number} level - 取得したい進化レベル (0, 1, 2)
+ * @returns {Array<{description: string, value: number, type: string}>} - 効果データ配列
+ */
+export function getCardEffectData(card, level) {
+    const data = [];
+
+    // ... 既存のロジックはそのまま ...
+    card.effects.forEach(effect => {
+        const valueKey = Object.keys(effect.params)[0]; // paramsのキー (e.g., score, drawCount)
+        const values = effect.params[valueKey];
+        const index = Math.min(level, values.length - 1);
+        const value = values[index];
+
+        if (value === 0 && effect.type === 'Draw') return;
+
+        data.push({
+            description: effect.description, // ここではプレースホルダを残す
+            value: value,
+            type: effect.type
+        });
+    });
+
+    return data;
+}
+
+/**
+ * 🌟 新規追加: カードの指定されたレベルにおける完全な効果テキストを生成する。
+ * @param {object} card - カードオブジェクト
+ * @param {number} level - 取得したい進化レベル (0, 1, 2)
+ * @returns {string} - "効果A / 効果B" の形式で結合された完全な効果テキスト
+ */
+export function generateFullEffectText(card, level) {
+    // getCardEffectData はこの関数内で使用されます
+    const data = getCardEffectData(card, level);
+
+    let text = data.map(effect => {
+        // descriptionの{value}を実際の値に置き換える
+        return effect.description.replace(/\{\w+\}/, effect.value);
+    }).join(' / ');
+
+    return text || "効果なし";
+}
+
+
+/**
+ * 手札表示用: 指定されたカードと進化レベルに基づき、その効果をまとめたテキストを生成する。
  * @param {object} card - ALL_CARDSからコピーされたカードオブジェクト
  * @returns {string} - 効果テキストのHTML文字列
  */
 export function generateEffectText(card) {
     const currentLevel = card.evolution || card.baseEvolution || 0;
-    
-    // 現在の効果テキスト
-    let effectText = card.effects.map(effect => {
-        const valueKey = Object.keys(effect.params)[0]; // paramsのキー (e.g., score, drawCount)
-        const value = effect.params[valueKey][Math.min(currentLevel, effect.params[valueKey].length - 1)];
-        
-        // 値が0の場合は効果を表示しない（例: Lv.0のドロー効果）
-        if (value === 0 && effect.type === 'Draw') return null;
+    const displayLevel = currentLevel + 1;
 
-        return effect.description.replace('{value}', value);
-    }).filter(text => text !== null);
+    // generateFullEffectText を使用して効果テキストを取得
+    const effectText = generateFullEffectText(card, currentLevel);
 
-    // Lv表示を追加
-    if (currentLevel > 0) {
-        return `<p class="card-effect">Lv.${currentLevel}：${effectText.join(' / ')}</p>`;
-    } else {
-        return `<p class="card-effect">${effectText.join(' / ')}</p>`;
-    }
+    // 常に表示レベル付きで出力
+    return `<p class="card-effect">Lv.${displayLevel}：${effectText}</p>`;
 }
 
 /**
@@ -107,7 +145,7 @@ export function generateEffectText(card) {
  */
 export function applyEvolution(card) {
     const MAX_LEVEL = 2; // カードの最大進化レベルを設定
-    
+
     if (card.evolution >= MAX_LEVEL) {
         // 最大レベルに達している場合は進化しない
         alert(`${card.name} は最大レベルです！`);
@@ -120,6 +158,6 @@ export function applyEvolution(card) {
     card.id = `${card.id.split('_evo')[0]}_evo${card.evolution}`;
 
     // 効果テキストを再生成 (game.jsで描画時に自動更新されるため、ここでは不要だが、データとして持たせる場合はここで更新)
-    
+
     return card;
 }
