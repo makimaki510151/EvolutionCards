@@ -376,8 +376,8 @@ export function generateEffectText(card) {
 
     const effectText = generateFullEffectText(card, currentLevel);
 
-    // 🌟 MAXレベル表示を追加
-    return `<p class="card-effect">${levelText} (Max Lv.${maxDisplayLevel})：${effectText}</p>`;
+    // 🌟 修正点: コロンの直後に <br> タグを追加し、強制的に改行させる
+    return `<p class="card-effect">${levelText} (Max Lv.${maxDisplayLevel})<br>${effectText}</p>`;
 }
 
 /**

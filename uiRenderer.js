@@ -85,7 +85,7 @@ function createCardElement(card, isEvolutionChoice = false) {
         htmlContent += `<div class="card-effect-comparison">${comparisonHtml}</div>`;
 
         if (currentLevel < maxEvo) {
-            cardEl.addEventListener('click', () => selectEvolutionCard(card));
+            // イベントリスナーは renderEvolutionChoices に移譲
         } else {
             cardEl.classList.add('used'); // MAXレベルのカードはクリック不可に
         }
@@ -132,21 +132,51 @@ export function showEvolutionScreen() {
 }
 
 export function renderEvolutionChoices() {
-    $evolutionChoices.innerHTML = '';
+    $evolutionChoices.innerHTML = ''; // 既存の選択肢をクリア
+
+    // masterCardListのインスタンス（進化レベル表示用）をbaseIdでグループ化
+    const evolvableCardInstances = {};
+    gameState.masterCardList.forEach(card => {
+        if (!evolvableCardInstances[card.baseId]) {
+            evolvableCardInstances[card.baseId] = [];
+        }
+        evolvableCardInstances[card.baseId].push(card);
+    });
+
     gameState.evolutionPhase.candidates.forEach(baseCard => {
+
+        // 🚨 修正点 1: cardWrapperをこのループのスコープで定義し、エラーを解消
+        const cardWrapper = document.createElement('div');
+        cardWrapper.className = 'evolution-card-wrapper';
+
+        // 表示用のカードオブジェクトを作成 (baseCardはgameCore.js側でbaseIdが設定済みである前提)
         const cardToDisplay = JSON.parse(JSON.stringify(baseCard));
 
-        const evolvableInstances = gameState.masterCardList.filter(c => c.baseId === baseCard.id);
-        if (evolvableInstances.length > 0) {
+        // 🚨 修正点 2: フィルタリングとレベル設定ロジックを統合（以前の提案から流用）
+        const instances = evolvableCardInstances[baseCard.id];
+        if (instances && instances.length > 0) {
             // 候補の中から最もレベルの低いカードのレベルを基準に表示
-            const minLevel = Math.min(...evolvableInstances.map(c => c.evolution || c.baseEvolution || 0));
+            const minLevel = Math.min(...instances.map(c => c.evolution || c.baseEvolution || 0));
             cardToDisplay.evolution = minLevel;
         }
 
-        const cardWrapper = document.createElement('div');
-        cardWrapper.className = 'evolution-card-wrapper';
         const cardEl = createCardElement(cardToDisplay, true);
         cardWrapper.appendChild(cardEl);
+
+        // 🚨 修正点 3: クリックイベントリスナーを追加 (最重要: ゲーム進行ロジック)
+        cardWrapper.addEventListener('click', async () => {
+            if (!gameState.evolutionPhase.active) return;
+
+            // baseCardにはgameCore.js側の修正でbaseIdが設定されている
+            await selectEvolutionCard(baseCard);
+
+            // 進化後もフェーズが続く場合（残り回数がある場合）は候補を再描画
+            if (gameState.evolutionPhase.active) {
+                renderEvolutionChoices();
+                document.getElementById('evo-count').textContent = gameState.evolutionPhase.count;
+            }
+        });
+
         $evolutionChoices.appendChild(cardWrapper);
     });
 }

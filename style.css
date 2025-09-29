@@ -193,7 +193,13 @@ footer {
     line-height: 1.5;
     flex-grow: 1;
     margin-top: 10px;
+
+    /* ★ 追加: 日本語の改行ルールを設定し、長い単語も途中で分割できるようにする */
+    word-break: break-all;
+    word-wrap: break-word;
+    /* 互換性のための指定 */
 }
+
 
 /* --- ボタン --- */
 button {
@@ -272,7 +278,9 @@ button:not(:disabled):hover {
 }
 
 .evolution-card-wrapper .card {
-    border: 3px solid var(--accent-color);
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
 }
 
 .evolution-card-wrapper .card:hover {
@@ -283,9 +291,23 @@ button:not(:disabled):hover {
 .card-level {
     font-weight: bold;
     color: var(--primary-button-bg);
-    /* レベル色を紫に変更 */
-    margin-bottom: 10px;
-    font-size: 1.2em;
+    margin-bottom: 15px;
+    /* 効果比較エリアとの間に余白を確保 */
+    font-size: 1.3em;
+    /* 少し大きく */
+    text-align: center;
+    /* 中央に寄せる */
+    border-bottom: 1px dashed var(--border-color);
+    /* 区切り線を追加 */
+    padding-bottom: 5px;
+}
+
+/* 進化/効果比較エリアの調整 */
+.card-effect-comparison {
+    flex-grow: 1;
+    /* 残りのスペースを埋める */
+    /* カード内のパディングに合わせて、比較エリアの周囲の余白を調整 */
+    margin: 5px 0 0 0;
 }
 
 .effect-description-comparison {
@@ -592,6 +614,11 @@ button:not(:disabled):hover {
         /* ギャップをさらに狭く */
         padding: 10px;
     }
+
+    .evolution-card-wrapper .card {
+        min-height: 320px;
+        /* スマホ・タブレットでは高さを少し抑える */
+    }
 }
 
 /* --- 📱 極小画面対応 (2枚以下も自動的に対応) --- */
@@ -619,6 +646,20 @@ button:not(:disabled):hover {
     /* デッキ編集画面のレイアウトも調整 */
     #deck-edit-overlay .screen {
         padding: 20px;
+    }
+
+    .evolution-card-wrapper .card {
+        min-height: 280px;
+        /* 極小画面ではさらに高さを抑える */
+    }
+
+    .card-level {
+        font-size: 1.1em;
+        margin-bottom: 10px;
+    }
+
+    .effect-description-comparison p {
+        font-size: 0.9em;
     }
 }
 

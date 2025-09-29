@@ -126,12 +126,18 @@ export async function startTurn(initialDrawCount = 0) {
  */
 export async function endTurn() {
     document.getElementById('end-turn-button').disabled = true;
-    // 手札をすべて捨て札に
-    gameState.discard.push(...gameState.hand);
-    gameState.hand = [];
-    renderHand();
 
+    // --- 変更点 ---
+    // 以前の処理: 手札をすべて捨て札に移動 (コメントアウトまたは削除)
+    // gameState.discard.push(...gameState.hand);
+    // gameState.hand = [];
+
+    // 手札はそのまま残すため、renderHand() はここでは実行しない
+    // -----------------
+
+    // ステージ達成チェックを行い、未達成の場合のみ次のターンに進む
     if (!checkStageCompletion()) {
+        // 次のターン開始処理を呼び出し、手札が5枚になるまで自動的にドローする
         await startTurn(0);
     }
 }
@@ -144,20 +150,28 @@ function checkStageCompletion() {
     if (gameState.currentScore >= gameState.targetScore) {
         // alert(`ステージ${gameState.stage}クリア！目標点 ${gameState.targetScore} を達成しました。進化フェーズへ移行します。`);
 
+        // 🌟 修正: デッキ内のユニークなカードIDを抽出し、それらを候補のベースとする
         const uniqueCardIds = [...new Set(gameState.masterCardList.map(c => c.baseId))];
         const evolvableCandidates = [];
 
-        for (const baseId of uniqueCardIds) {
+        // ユニークなカードIDごとに進化候補をチェック
+        for (const baseId of uniqueCardIds) { // 🌟 baseIdをここで定義
+            // カードの基本情報（ALL_CARDSから取得）
             const cardInfo = ALL_CARDS.find(c => c.id === baseId);
             if (!cardInfo) continue;
 
             const cardMaxEvo = getCardMaxEvolution(cardInfo);
-            const isEvolvable = gameState.masterCardList.some(c =>
-                c.baseId === baseId && (c.evolution || c.baseEvolution || 0) < cardMaxEvo
+
+            // 🌟 修正: デッキ内に「このbaseId」を持ち、かつ「まだ最大レベルに達していない」インスタンスが一つでもあるかチェック
+            const isEvolvable = gameState.masterCardList.some(cardInstance =>
+                cardInstance.baseId === baseId && (cardInstance.evolution || cardInstance.baseEvolution || 0) < cardMaxEvo
             );
 
             if (isEvolvable) {
-                evolvableCandidates.push(cardInfo);
+                // ALL_CARDSのデータにはbaseIdがないため、進化候補として渡すオブジェクトに明示的に設定する
+                const candidate = JSON.parse(JSON.stringify(cardInfo));
+                candidate.baseId = cardInfo.id; // ALL_CARDSのidをbaseIdとして設定
+                evolvableCandidates.push(candidate);
             }
         }
 
@@ -204,7 +218,7 @@ async function applyEffects(card) {
                 await drawCardsWithAnimation(value);
                 break;
             case 'Multiplier':
-                gameState.nextScoreMultiplier = value;
+                gameState.nextScoreMultiplier *= value;
                 break;
             case 'CostIgnore':
                 gameState.costIgnoreCount += value;
@@ -263,9 +277,10 @@ export async function useCard(handIndex) {
 
     const costIgnored = gameState.costIgnoreCount > 0;
     if (!costIgnored) {
+        // --- 変更点 1: 使用回数オーバー時の警告を削除 ---
         if (gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
-            alert("これ以上カードは使えません。ターンを終了してください。");
-            return;
+            // alert("これ以上カードは使えません。ターンを終了してください。"); // この行を削除/コメントアウト
+            return; // 念のため早期リターンは残しておく
         }
         gameState.cardsUsedThisTurn++;
     } else {
@@ -283,7 +298,19 @@ export async function useCard(handIndex) {
 
     renderHand();
     updateDisplay();
-    checkStageCompletion();
+
+    // --- 変更点 2: ターン終了の自動判定ロジックを追加 ---
+    // コスト無視カウンターが0 かつ、残り使用回数が0 になった場合
+    if (gameState.costIgnoreCount === 0 && gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
+        // ターン終了の効果音をここで鳴らす場合は、uiRenderer.js に定義を追加する必要があります。
+        // 例: playTurnEndSFX();
+
+        // ターンを自動で終了し、次のターンへ移行する
+        await endTurn();
+    } else {
+        // ターンが続行する場合は、ステージ達成チェックのみ行う
+        checkStageCompletion();
+    }
 }
 
 /**
@@ -314,10 +341,8 @@ export async function selectEvolutionCard(baseCard) {
     playEvolutionSFX();
 
     gameState.evolutionPhase.count--;
-    document.getElementById('evo-count').textContent = gameState.evolutionPhase.count;
-
     if (gameState.evolutionPhase.count > 0) {
-        checkStageCompletion(); // 候補を再生成して表示
+        
     } else {
         await proceedToNextStage();
     }
