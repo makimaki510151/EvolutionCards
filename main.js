@@ -13,11 +13,11 @@ const $deckSelectScreen = document.getElementById('deck-select-screen');
 const $deckManagementScreen = document.getElementById('deck-management-screen');
 const $gameContainer = document.getElementById('game-container');
 const $deckEditOverlay = document.getElementById('deck-edit-overlay');
+const $overlay = document.getElementById('overlay');
 const $confirmDeckButton = document.getElementById('confirm-deck-button');
 const $startNewGameButton = document.getElementById('start-game-button');
 const $manageDeckButton = document.getElementById('manage-deck-button');
 const $cardEditList = document.getElementById('card-edit-list');
-// 🌟 追加: デッキ選択リスト要素
 const $deckListSelect = document.getElementById('deck-list-select');
 
 
@@ -29,6 +29,10 @@ export function showScreen(screenElement) {
     [$titleScreen, $deckSelectScreen, $deckManagementScreen, $gameContainer, $deckEditOverlay].forEach(el => {
         el.classList.add('hidden');
     });
+
+    // 🌟 修正: オーバーレイ（ゲームオーバー/進化画面を含む）を非表示にする
+    $overlay.classList.add('hidden');
+
     // 指定された画面を表示
     screenElement.classList.remove('hidden');
 }

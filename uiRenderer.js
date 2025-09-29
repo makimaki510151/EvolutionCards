@@ -16,6 +16,7 @@ const $overlay = document.getElementById('overlay');
 const $evolutionScreen = document.getElementById('evolution-screen');
 const $gameoverScreen = document.getElementById('gameover-screen');
 const $evolutionChoices = document.getElementById('evolution-choices');
+const $finalScore = document.getElementById('final-score');
 
 
 // --- 描画関数 ---
@@ -170,7 +171,7 @@ export function renderEvolutionChoices() {
         cardWrapper.addEventListener('click', async () => {
             if (!gameState.evolutionPhase.active) return;
             // MAXレベルのカードはクリック不可
-            if (cardEl.classList.contains('used')) return; 
+            if (cardEl.classList.contains('used')) return;
 
             // baseCardにはgameCore.js側の修正でbaseIdが設定されている
             await selectEvolutionCard(baseCard);
@@ -190,6 +191,7 @@ export function showGameOverScreen() {
     $gameoverScreen.classList.remove('hidden');
     $evolutionScreen.classList.add('hidden');
     document.getElementById('final-stage').textContent = gameState.stage;
+    $finalScore.textContent = gameState.currentScore;
     document.getElementById('high-score').textContent = gameState.highScore;
 }
 

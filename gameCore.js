@@ -133,6 +133,16 @@ export async function endTurn() {
     if (!checkStageCompletion()) {
         // 次のターン開始処理を呼び出し、手札が5枚になるまで自動的にドローする
         await startTurn(0);
+
+        // 🌟 修正点: ドロー後の手札の状態で、ステージ未達成 AND 手札が空ならゲームオーバー
+        const isHandEmpty = gameState.hand.length === 0;
+        const isStageFailed = gameState.currentScore < gameState.targetScore;
+
+        // 手札が空（ドローもできず）で、かつステージ未達成ならゲームオーバー
+        // 捨て札にカードがあっても、手札がないためシャッフルするカードを使えず、詰みと判断する
+        if (isHandEmpty && isStageFailed) {
+            showGameOverScreen();
+        }
     }
 }
 
@@ -175,33 +185,51 @@ async function applyEffects(card) {
     const cardInstanceId = card.id;
     let shouldDiscard = true;
 
+    // 🌟 修正点: 次のカードではなく、このカードの数値効果すべてに適用するように修正
+    let multiplier = gameState.nextScoreMultiplier; // 現在の倍率を取得
+    gameState.nextScoreMultiplier = 1; // 効果適用前に倍率をリセット
+
     for (const effect of effectData) {
-        const value = effect.value;
+        let value = effect.value;
         const type = effect.type;
+
+        // 🌟 修正点: Score, Draw, CostIgnore, PurgeSelf, CardUseMod, RetrieveDiscard, DiscardHand に倍率を適用
+        const shouldApplyMultiplier = ['Score', 'Draw', 'CostIgnore', 'PurgeSelf', 'CardUseMod', 'RetrieveDiscard', 'DiscardHand'].includes(type);
+
+        if (shouldApplyMultiplier && type !== 'Multiplier' && type !== 'ShuffleDiscard') {
+            value = Math.round(value * multiplier); // 値を倍率で乗算
+            value = Math.max(0, value); // 負の数値にならないように制限 (例: Draw -1枚など)
+        }
 
         switch (type) {
             case 'Score':
-                gameState.currentScore += Math.round(value * gameState.nextScoreMultiplier);
-                gameState.nextScoreMultiplier = 1;
+                // 🌟 修正: すでに倍率が適用されているvalueを使用
+                gameState.currentScore += value;
                 break;
             case 'Draw':
+                // 🌟 修正: すでに倍率が適用されているvalueを使用
                 await drawCardsWithAnimation(value);
                 break;
             case 'Multiplier':
+                // Multiplier効果は倍率を重ねがけし、次回の適用時にリセットされるようにする (上書きではなく乗算)
                 gameState.nextScoreMultiplier *= value;
                 break;
             case 'CostIgnore':
+                // 🌟 修正: すでに倍率が適用されているvalueを使用
                 gameState.costIgnoreCount += value;
                 break;
             case 'PurgeSelf':
                 gameState.masterCardList = gameState.masterCardList.filter(c => c.id !== cardInstanceId);
+                // 🌟 修正: すでに倍率が適用されているvalueを使用
                 gameState.currentScore += value;
                 shouldDiscard = false;
                 break;
             case 'CardUseMod':
+                // 🌟 修正: すでに倍率が適用されているvalueを使用
                 gameState.cardsUsedThisTurn = Math.max(0, gameState.cardsUsedThisTurn - value);
                 break;
             case 'RetrieveDiscard':
+                // 🌟 修正: すでに倍率が適用されているvalueを使用
                 for (let i = 0; i < value; i++) {
                     if (gameState.discard.length > 0) {
                         const randomIndex = Math.floor(Math.random() * gameState.discard.length);
@@ -219,6 +247,7 @@ async function applyEffects(card) {
                 }
                 break;
             case 'DiscardHand':
+                // 🌟 修正: すでに倍率が適用されているvalueを使用
                 for (let i = 0; i < value; i++) {
                     if (gameState.hand.length > 0) {
                         const randomIndex = Math.floor(Math.random() * gameState.hand.length);
@@ -267,6 +296,17 @@ export async function useCard(handIndex) {
     renderHand();
     updateDisplay();
 
+    // ターン途中のゲームオーバー判定ロジック
+    const isHandEmpty = gameState.hand.length === 0;
+    const isDeckTotallyEmpty = gameState.deck.length === 0 && gameState.discard.length === 0;
+
+    // プレイ中に「山札が空」し、「手札も空」になったらゲームオーバー
+    if (isHandEmpty && isDeckTotallyEmpty && gameState.currentScore < gameState.targetScore) {
+        showGameOverScreen();
+        return;
+    }
+
+
     // ターン終了の自動判定ロジック
     if (gameState.costIgnoreCount === 0 && gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
         await endTurn();
@@ -277,34 +317,29 @@ export async function useCard(handIndex) {
 
 /**
  * 進化画面でカードが選択されたときの処理
- * @param {object} baseCard - ALL_CARDSからコピーされた、進化のベースとなるカードオブジェクト
+ * @param {object} baseCard - ALL_CARDSからコピーされた、進化のベースとなるカードオブジェクト (インスタンスIDを含む)
  */
 export async function selectEvolutionCard(baseCard) {
     if (!gameState.evolutionPhase.active) return;
 
-    // 🌟 修正: baseCard.baseId を使用して、進化対象のカードインスタンスを特定
-    const cardBaseId = baseCard.baseId;
+    // 🌟 修正: baseCard.id (ユニークなインスタンスID) を使用して、進化対象のカードインスタンスを特定
+    const targetCardId = baseCard.id;
 
-    // 進化可能なインスタンスをフィルタリング
-    let evolvableInstances = gameState.masterCardList.filter(c =>
-        c.baseId === cardBaseId && getCardMaxEvolution(c) > (c.evolution !== undefined ? c.evolution : (c.baseEvolution || 0))
-    );
+    // 🌟 修正: ユニークIDでインスタンスを直接見つける
+    const targetCard = gameState.masterCardList.find(c => c.id === targetCardId);
 
-    if (evolvableInstances.length === 0) {
-        // これはgenerateEvolutionCandidatesで排除されるはずだが、念のため。
-        // alert(`${baseCard.name} は全て最大レベルです。別のカードを選びましょう。`);
+    if (!targetCard) {
+        console.error("進化対象のカードインスタンスが見つかりませんでした:", targetCardId);
+        return;
+    }
+
+    // 最大レベルチェック
+    const currentLevel = targetCard.evolution !== undefined ? targetCard.evolution : (targetCard.baseEvolution || 0);
+    if (getCardMaxEvolution(targetCard) <= currentLevel) {
         generateEvolutionCandidates();
         renderEvolutionChoices();
         return;
     }
-
-    // 🌟 変更: 最もレベルの低いカードインスタンスを進化させる
-    // card.evolutionが未定義の場合は0としてソート
-    evolvableInstances.sort((a, b) => 
-        (a.evolution !== undefined ? a.evolution : (a.baseEvolution || 0)) - 
-        (b.evolution !== undefined ? b.evolution : (b.baseEvolution || 0))
-    );
-    const targetCard = evolvableInstances[0];
 
     // cards.jsのapplyEvolutionを呼び出し、targetCardの'evolution'プロパティが更新される
     applyEvolution(targetCard);
@@ -327,52 +362,36 @@ export async function selectEvolutionCard(baseCard) {
  * 進化候補カード4枚を生成し、gameState.evolutionPhase.candidatesに格納する
  */
 function generateEvolutionCandidates() {
-    // 🌟 変更点: 進化可能なすべてのカードインスタンスの baseId を重複なく抽出し、ランダムに4種類を選ぶ
-
-    // 1. 進化可能なカードインスタンスの baseId を抽出
-    const evolvableBaseIds = new Set();
-    gameState.masterCardList.forEach(cardInstance => {
+    // 🌟 変更点: 進化可能なすべてのカードインスタンスを候補として抽出（baseIdの重複OK）
+    const allEvolvableInstances = gameState.masterCardList.filter(cardInstance => {
         const currentLevel = cardInstance.evolution !== undefined ? cardInstance.evolution : (cardInstance.baseEvolution || 0);
-        // 最大レベルに達していないカードインスタンスの baseId のみを抽出
-        if (getCardMaxEvolution(cardInstance) > currentLevel) {
-            evolvableBaseIds.add(cardInstance.baseId);
-        }
+        // getCardMaxEvolution(cardInstance) を呼び出すために、カードインスタンス自体を渡す
+        return getCardMaxEvolution(cardInstance) > currentLevel;
     });
-    
-    // 進化可能な baseId がない場合は空の配列で終了
-    if (evolvableBaseIds.size === 0) {
+
+    // 進化可能なインスタンスがない場合は空の配列で終了
+    if (allEvolvableInstances.length === 0) {
         gameState.evolutionPhase.candidates = [];
         return;
     }
 
-    // 2. 抽出した baseId に対応する ALL_CARDS のデータを候補として準備
-    const allCandidates = Array.from(evolvableBaseIds).map(baseId => {
-        const cardInfo = ALL_CARDS.find(c => c.id === baseId);
-        if (cardInfo) {
-            // ALL_CARDSのデータをコピーし、baseIdを設定して返す
-            const candidate = JSON.parse(JSON.stringify(cardInfo));
-            candidate.baseId = cardInfo.id; 
-            
-            // 🌟 最もレベルの低いインスタンスの現在のレベルを表示のために取得
-            const lowestLevelInstance = gameState.masterCardList
-                .filter(c => c.baseId === baseId)
-                .sort((a, b) => 
-                    (a.evolution !== undefined ? a.evolution : (a.baseEvolution || 0)) - 
-                    (b.evolution !== undefined ? b.evolution : (b.baseEvolution || 0))
-                )[0];
-            
-            // 候補カード自体にも進化前のレベル情報を持たせて、uiRendererで表示できるようにする
-            candidate.evolution = lowestLevelInstance.evolution !== undefined ? lowestLevelInstance.evolution : (lowestLevelInstance.baseEvolution || 0);
+    // 2. 候補リストをシャッフルし、最大4枚を選ぶ
+    shuffle(allEvolvableInstances);
+    const selectedInstances = allEvolvableInstances.slice(0, 4);
 
-            return candidate;
-        }
-        return null;
-    }).filter(c => c !== null);
+    // 3. 選択されたインスタンスから表示用の候補オブジェクトを作成
+    gameState.evolutionPhase.candidates = selectedInstances.map(instance => {
+        // ALL_CARDSのデータをコピーして表示用オブジェクトを作成
+        const cardInfo = ALL_CARDS.find(c => c.id === instance.baseId);
+        const candidate = JSON.parse(JSON.stringify(cardInfo));
 
+        // 🌟 選択されたインスタンスのユニークなIDとレベルを保持
+        candidate.id = instance.id; // 選択されたインスタンスのユニークID
+        candidate.baseId = instance.baseId; // カードの種類ID
+        candidate.evolution = instance.evolution; // 現在の進化レベル
 
-    // 3. 候補リストをシャッフルし、最大4枚を選ぶ
-    shuffle(allCandidates);
-    gameState.evolutionPhase.candidates = allCandidates.slice(0, 4);
+        return candidate;
+    });
 }
 
 // 🌟 修正: 引数に画面を閉じるためのフラグを追加
@@ -410,14 +429,7 @@ async function proceedToNextStage(closeEvolutionScreen = false) {
  */
 function internalDrawSingleCard() {
     if (gameState.deck.length === 0) {
-        if (gameState.discard.length > 0) {
-            // 🌟 修正: 捨て札を山札に戻す際に、カードインスタンスの'id'や'evolution'プロパティを保持したまま移動する
-            gameState.deck.push(...gameState.discard);
-            gameState.discard = [];
-            shuffle(gameState.deck);
-        } else {
-            return null;
-        }
+        return null;
     }
     const card = gameState.deck.pop();
     if (card) {
