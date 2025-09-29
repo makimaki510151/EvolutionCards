@@ -35,7 +35,6 @@ body {
 #game-container,
 .screen {
     width: 100%;
-    /* ★ 修正: PCでの5枚表示に対応するため、最大幅を広く設定 */
     max-width: 1500px;
     background-color: var(--primary-bg-color);
     border-radius: 16px;
@@ -50,7 +49,7 @@ body {
     gap: 20px;
 }
 
-/* --- ヘッダー/フッター (省略) --- */
+/* --- ヘッダー/フッター --- */
 header,
 footer {
     display: flex;
@@ -102,14 +101,12 @@ footer {
 
 /* --- 🃏 カード共通スタイル 🃏 --- */
 .card {
-    /* ★ 修正: カードの幅を縮小し、5枚横並びに対応 (1500px / 5枚 = 300px -> gap込みで調整) */
+    /* ★ PC/大画面向け: カード幅を縮小し、5枚横並びに対応 */
     width: 200px;
     min-height: 270px;
-    /* 高さも少し調整 */
     background: linear-gradient(145deg, #f9f9f9, #e9e9e9);
     border-radius: 15px;
     padding: 15px;
-    /* パディングも少し減らす */
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2), 0 0 5px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
@@ -136,7 +133,6 @@ footer {
     right: 0;
     bottom: 0;
     left: 0;
-    /* グレア効果を明るいトーンに調整 */
     background: radial-gradient(circle at top left, rgba(0, 0, 0, 0.08), transparent 50%);
     opacity: 0;
     transition: opacity 0.3s;
@@ -144,7 +140,6 @@ footer {
 
 .card:hover {
     transform: translateY(-8px) scale(1.03);
-    /* ★ 修正: ホバー時のシャドウと枠線を大幅に強調 */
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3), 0 0 20px var(--accent-color);
     border-color: var(--primary-button-bg);
 }
@@ -157,7 +152,6 @@ footer {
     opacity: 0.7;
     cursor: default;
     background: #e0e0e0;
-    /* 使用済みカードも明るいグレーに */
     transform: none;
     box-shadow: none;
 }
@@ -175,7 +169,6 @@ footer {
     font-weight: bold;
     font-size: 1.5em;
     color: var(--accent-color);
-    /* テキストシャドウも明るい色に調整 */
     text-shadow: 0 0 5px rgba(0, 188, 212, 0.5);
 }
 
@@ -193,11 +186,8 @@ footer {
     line-height: 1.5;
     flex-grow: 1;
     margin-top: 10px;
-
-    /* ★ 追加: 日本語の改行ルールを設定し、長い単語も途中で分割できるようにする */
     word-break: break-all;
     word-wrap: break-word;
-    /* 互換性のための指定 */
 }
 
 
@@ -212,13 +202,11 @@ button {
     cursor: pointer;
     transition: all 0.2s ease;
     background-color: var(--primary-button-bg);
-    /* ポップなボタンシャドウ */
     box-shadow: 0 4px 10px rgba(103, 58, 183, 0.3);
 }
 
 button:disabled {
     background-color: #bdbdbd;
-    /* 明るいグレーに */
     cursor: not-allowed;
     box-shadow: none;
     opacity: 0.7;
@@ -238,14 +226,12 @@ button:not(:disabled):hover {
     left: 0;
     width: 100%;
     height: 100%;
-    /* オーバーレイの背景を明るめのトーンに調整 */
     background: rgba(0, 0, 0, 0.4);
     z-index: 100;
     display: flex;
     justify-content: center;
     align-items: center;
     backdrop-filter: blur(5px);
-    /* ブラーを維持 */
 }
 
 .hidden {
@@ -258,7 +244,6 @@ button:not(:disabled):hover {
     width: 90%;
     max-width: 1200px;
     text-align: center;
-    /* 明るい背景で目立つ境界線 */
     border: 3px solid var(--accent-color);
     box-shadow: 0 0 20px rgba(0, 188, 212, 0.4);
 }
@@ -292,21 +277,15 @@ button:not(:disabled):hover {
     font-weight: bold;
     color: var(--primary-button-bg);
     margin-bottom: 15px;
-    /* 効果比較エリアとの間に余白を確保 */
     font-size: 1.3em;
-    /* 少し大きく */
     text-align: center;
-    /* 中央に寄せる */
     border-bottom: 1px dashed var(--border-color);
-    /* 区切り線を追加 */
     padding-bottom: 5px;
 }
 
 /* 進化/効果比較エリアの調整 */
 .card-effect-comparison {
     flex-grow: 1;
-    /* 残りのスペースを埋める */
-    /* カード内のパディングに合わせて、比較エリアの周囲の余白を調整 */
     margin: 5px 0 0 0;
 }
 
@@ -315,7 +294,6 @@ button:not(:disabled):hover {
     padding: 15px;
     margin-top: 15px;
     background-color: var(--secondary-bg-color);
-    /* 薄いラベンダーの背景 */
     border-radius: 8px;
     text-align: left;
 }
@@ -341,7 +319,6 @@ button:not(:disabled):hover {
     margin-bottom: 10px;
     font-weight: 900;
     letter-spacing: 2px;
-    /* タイトルシャドウもポップに */
     text-shadow: 3px 3px 0 #fff, 0 0 15px var(--accent-color);
 }
 
@@ -387,7 +364,6 @@ button:not(:disabled):hover {
 
 .deck-item:hover {
     background-color: #d1c4e9;
-    /* ホバー色を調整 */
 }
 
 .deck-name-display {
@@ -419,7 +395,6 @@ button:not(:disabled):hover {
 
 .deck-select-item input[type="radio"]:checked+.deck-name-display {
     color: var(--primary-button-bg);
-    /* 選択色をプライマリボタン色に */
     font-weight: bold;
 }
 
@@ -431,9 +406,7 @@ button:not(:disabled):hover {
 #current-deck-size {
     font-size: 1.2em;
     font-weight: bold;
-    /* 追加: 合計枚数を強調 */
     text-align: center;
-    /* 追加: 中央揃え */
     padding: 12px;
     background-color: var(--secondary-bg-color);
     border: 1px solid var(--border-color);
@@ -446,7 +419,7 @@ button:not(:disabled):hover {
     width: 100%;
     padding: 12px;
     font-size: 1.2em;
-    background-color: var(--secondary-bg-color);
+    background-color: var(--secondary-button-bg);
     border: 1px solid var(--border-color);
     color: var(--text-color);
     border-radius: 8px;
@@ -460,7 +433,6 @@ button:not(:disabled):hover {
     border: 1px solid var(--border-color);
     margin: 20px 0;
     background-color: #fcfcff;
-    /* 非常に明るい背景 */
     border-radius: 8px;
 }
 
@@ -476,17 +448,14 @@ button:not(:disabled):hover {
     border-bottom: none;
 }
 
-/* ★ 修正: カード情報表示エリアを追加し、左寄せを確保 */
 .edit-card-info {
     flex-grow: 1;
     text-align: left;
     padding-right: 15px;
-    /* コントロールとの間に少し間隔をあける */
 }
 
 .edit-card-item .card-name {
     font-size: 1.2em;
-    /* 中央寄せを防ぐための設定を維持 */
     text-align: left;
     width: 100%;
     display: flex;
@@ -500,11 +469,8 @@ button:not(:disabled):hover {
 
 .edit-controls {
     display: flex;
-    /* 追加 */
     align-items: center;
-    /* 追加: 縦方向中央揃え */
     flex-shrink: 0;
-    /* サイズ変更をしないように設定 */
 }
 
 .edit-controls button {
@@ -516,16 +482,10 @@ button:not(:disabled):hover {
 
 .card-count {
     width: 35px;
-
-    /* 修正点：display: flex; を追加し、この要素内のテキストを中央に */
     display: flex;
     justify-content: center;
-    /* 水平中央揃え */
     align-items: center;
-    /* 垂直中央揃え */
-
     text-align: center;
-    /* flexと併用しても良いが、flexが優先される */
     font-weight: bold;
     font-size: 1.2em;
 }
@@ -562,9 +522,7 @@ button:not(:disabled):hover {
 .max-level {
     font-weight: bold;
     color: white;
-    /* 白文字に */
     background-color: var(--primary-button-bg);
-    /* プライマリボタン色で強調 */
     padding: 2px 5px;
     border-radius: 4px;
     margin-left: 5px;
@@ -580,86 +538,166 @@ button:not(:disabled):hover {
 .edit-card-item .card-next-effect {
     font-size: 0.85em;
     color: var(--success-color);
-    /* 進化の恩恵は成功色 */
     margin-top: 5px;
     text-align: left;
 }
 
 .edit-card-item .card-next-effect.max-level {
     color: var(--text-muted-color);
-    /* カンスト表示はミュート色 */
 }
 
-/* --- 📱 スマホ画面対応 (3枚横並び) --- */
+/* --- 📱 中間サイズ画面対応 (992px以下/タブレット・横向きスマホ) --- */
 @media (max-width: 992px) {
 
     #game-container,
     .screen {
-        /* タブレット・スマホの中間サイズでは最大幅を調整 */
         max-width: 100%;
         padding: 15px;
     }
 
     .card {
-        /* ★ 修正: 画面幅が狭い場合、カードの幅を相対的に広げて3枚並ぶように調整 */
-        /* (100% - 2 * gap) / 3 ≈ 33.3% - α */
-        width: calc(33.33% - 15px);
         /* 3枚並び + ギャップ15px */
+        width: calc(33.33% - 15px);
         min-height: 250px;
         padding: 12px;
     }
 
     .card-area {
         gap: 10px;
-        /* ギャップをさらに狭く */
         padding: 10px;
     }
 
     .evolution-card-wrapper .card {
         min-height: 320px;
-        /* スマホ・タブレットでは高さを少し抑える */
     }
 }
 
-/* --- 📱 極小画面対応 (2枚以下も自動的に対応) --- */
+/*
+--- 📱 スマホ縦向き画面対応 (576px以下) ---
+- 3枚並びを維持 (ただし、380px以下は2枚並びに移行)
+- ヘッダー情報を縦並びに変更
+- 文字を相対的に大きくして可読性向上
+*/
 @media (max-width: 576px) {
+
+    /* 3枚並びを維持する設定（380px以上576px以下に適用） */
     .card {
-        /* 画面幅が非常に狭い場合は2枚並び (例) */
-        width: calc(50% - 10px);
-        min-height: 220px;
-        font-size: 0.9em;
+        width: calc(33.33% - 7px);
+        min-height: 160px;
+        padding: 6px;
+        font-size: 0.75em;
     }
 
     #game-container {
         padding: 10px;
     }
 
-    /* カード名や効果文のサイズをさらに調整 */
+    .card-area {
+        gap: 5px;
+    }
+
+    /* カード名や効果文のサイズを相対的に大きくし、可読性を向上 */
     .card-name {
-        font-size: 1.1em;
+        font-size: 1.3em;
+        margin-bottom: 3px;
     }
 
     .card-effect {
-        font-size: 0.85em;
+        font-size: 1.05em;
     }
 
-    /* デッキ編集画面のレイアウトも調整 */
-    #deck-edit-overlay .screen {
-        padding: 20px;
+    /* ★ 修正点: ヘッダー情報（上部バー）のレイアウトを横書き縦並びにする */
+    #game-container header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 10px;
+        gap: 5px;
+        /* アイテム間の隙間を追加 */
+    }
+
+    .game-info-block {
+        width: 100%;
+        min-width: unset;
+        margin: 5px 0;
+        flex-direction: row;
+        justify-content: space-between;
+        /* 情報ブロック内のpaddingを調整 */
+        padding: 5px 10px;
+    }
+
+    #quit-game-button {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 5px;
+        /* 隙間を小さく */
+        order: 0;
+    }
+
+    #score-info,
+    #stage-info,
+    #turn-info {
+        margin: 0;
+        /* 左右マージンを完全に削除 */
+        font-size: 1.1em;
+        order: unset !important;
+        /* 情報表示内の文字サイズ調整 */
     }
 
     .evolution-card-wrapper .card {
-        min-height: 280px;
-        /* 極小画面ではさらに高さを抑える */
+        min-height: 250px;
+    }
+}
+
+/*
+--- 📱 超極小画面対応 (380px以下) ---
+★ 最終調整: 350px幅のスマホで2枚並びとヘッダーの縦並びを確実に実現
+*/
+@media (max-width: 380px) {
+
+    /* ★ 修正1: 狭い画面でのカードエリアのパディングを最小限に */
+    #game-container {
+        padding: 5px;
     }
 
-    .card-level {
-        font-size: 1.1em;
-        margin-bottom: 10px;
+    .card-area {
+        /* カードエリア自体のパディングを削除 */
+        padding: 5px;
+        /* ギャップは5pxを維持 */
+        gap: 5px;
     }
 
-    .effect-description-comparison p {
+    /* ★ 修正2: 2枚並びのための幅調整 */
+    .card {
+        /* (100% - ギャップ5px) / 2 = 50% - 2.5px。安全を見てさらに少し引く */
+        width: calc(50% - 5px);
+        min-height: 140px;
+        padding: 4px;
+        font-size: 0.7em;
+    }
+
+    /* カード名/効果の相対的な大きさは維持 */
+    .card-name {
+        font-size: 1.3em;
+    }
+
+    .card-effect {
+        font-size: 1.05em;
+    }
+
+    .evolution-card-wrapper .card {
+        min-height: 200px;
+    }
+
+    /* ヘッダー情報も576px以下の設定を継承し、文字サイズをさらに調整 */
+    #score-info,
+    #stage-info,
+    #turn-info {
         font-size: 0.9em;
+    }
+
+    .game-info-block {
+        /* ブロック内のpaddingをさらに削る */
+        padding: 3px 5px;
     }
 }
 
@@ -712,7 +750,6 @@ button:not(:disabled):hover {
 
 #game-container header {
     display: flex;
-    /* 🌟 変更: 要素を両端に配置 */
     justify-content: space-between;
     align-items: center;
     padding: 10px 20px;
@@ -731,7 +768,6 @@ button:not(:disabled):hover {
     border-radius: 6px;
     box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
     min-width: 120px;
-    /* ある程度の幅を確保 */
     text-align: center;
 }
 
@@ -750,7 +786,7 @@ button:not(:disabled):hover {
     transition: background-color 0.2s;
     /* flexアイテムの並び順を最初にし、他の要素との間に自動マージンを設定 */
     order: -1;
-    margin-right: auto;
+    margin-right: 30px;
 }
 
 #quit-game-button:hover {
@@ -765,36 +801,28 @@ button:not(:disabled):hover {
     font-size: 1.2em;
     font-weight: bold;
     color: var(--text-color);
-    /* 🌟 変更: game-info-block の内側に入るのでこのマージンは削除 */
-    /* margin: 0 15px; */
 }
 
 /* スコア情報とターン情報を視覚的に際立たせる */
 #score-info {
     order: 1;
-    /* 左端に配置 */
 }
 
 #stage-info {
     order: 2;
-    /* 中央に配置 */
     font-size: 1.4em;
-    /* ステージを少し大きく */
     color: var(--primary-button-bg);
 }
 
 #turn-info {
     order: 3;
-    /* 右端に配置 */
 }
 
 /* 🌟 新規: 各情報ブロックの間隔を確保 (既存のスタイル定義にマージンを追加) */
 #score-info,
 #stage-info,
 #turn-info {
-    /* 既存のスタイルを維持しつつ、左右マージンで間隔を広げる */
     margin: 0 30px;
-    /* 30px に設定することで視覚的な間隔を広げる */
     font-size: 1.2em;
     font-weight: bold;
     color: var(--text-color);
@@ -802,7 +830,6 @@ button:not(:disabled):hover {
 
 /* 🌟 新規: ゲーム破棄ボタンの右マージンを調整し、スコア情報との間隔を広げる */
 #quit-game-button {
-    /* 破壊的な操作であることを示す色 (danger-color) */
     background-color: var(--danger-color);
     color: white;
     padding: 8px 15px;
@@ -812,32 +839,25 @@ button:not(:disabled):hover {
     font-size: 1em;
     font-weight: bold;
     transition: background-color 0.2s;
-    /* flexアイテムの並び順を最初にし、他の要素との間に自動マージンを設定 */
     order: -1;
     margin-right: 30px;
-    /* auto から 30px に変更し、スペースを確保 */
 }
 
 #quit-game-button:hover {
     background-color: #d32f2f;
-    /* 少し暗い赤 */
 }
 
 /* スコア情報とターン情報を視覚的に際立たせる (既存のorder設定を維持) */
 #score-info {
     order: 1;
-    /* 左端に配置 */
 }
 
 #stage-info {
     order: 2;
-    /* 中央に配置 */
     font-size: 1.4em;
-    /* ステージを少し大きく */
     color: var(--primary-button-bg);
 }
 
 #turn-info {
     order: 3;
-    /* 右端に配置 */
 }
