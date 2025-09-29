@@ -272,3 +272,30 @@ footer {
     background-color: #555;
     cursor: not-allowed;
 }
+#current-deck-size span.size-over {
+    color: #ff4d4d; /* 赤系 */
+    font-weight: bold;
+    animation: pulse-red 0.5s infinite alternate; /* 警告のアニメーション */
+}
+
+#current-deck-size span.size-ok {
+    color: #4CAF50; /* 緑系 */
+    font-weight: bold;
+}
+
+#current-deck-size span.size-short {
+    color: #ffc107; /* 黄色系 */
+    font-weight: normal;
+}
+
+/* 警告アニメーションの定義 */
+@keyframes pulse-red {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0.7;
+        transform: scale(1.05);
+    }
+}

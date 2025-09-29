@@ -2,7 +2,8 @@
 
 // 必要な関数とデータをインポート
 import { generateEffectText, ALL_CARDS } from './cards.js';
-import { showDeckManagementScreen } from './main.js';
+// showDeckManagementScreenはmain.jsでの画面制御のため使用しないが、既存のimportは残しておく
+import { showDeckManagementScreen } from './main.js'; 
 
 // --- データのキーと初期データ ---
 const STORAGE_KEY_DECKS = 'roguelite_decks';
@@ -35,20 +36,24 @@ const $cardEditList = document.getElementById('card-edit-list');
 
 // --- デッキデータのロード/保存 ---
 
-/** デッキデータをロードする */
+/**
+ * ローカルストレージからデッキデータをロードする
+ */
 export function loadDeckData() {
-    const storedDecks = localStorage.getItem(STORAGE_KEY_DECKS);
-
-    if (storedDecks) {
-        playerDecks = JSON.parse(storedDecks);
+    const data = localStorage.getItem(STORAGE_KEY_DECKS);
+    if (data) {
+        playerDecks = JSON.parse(data);
     } else {
         // データがない場合は初期デッキを作成
-        playerDecks.push(INITIAL_DECK_TEMPLATE);
+        playerDecks.push(JSON.parse(JSON.stringify(INITIAL_DECK_TEMPLATE)));
+        playerDecks.push(JSON.parse(JSON.stringify(INITIAL_DECK_TEMPLATE))); // 2つ目も作成
         saveDecks();
     }
 }
 
-/** デッキデータを保存する */
+/**
+ * デッキデータをローカルストレージに保存する
+ */
 function saveDecks() {
     localStorage.setItem(STORAGE_KEY_DECKS, JSON.stringify(playerDecks));
 }
@@ -56,17 +61,14 @@ function saveDecks() {
 
 // --- 外部からアクセスするためのゲッター ---
 
-/** すべてのデッキデータを取得する */
 export function getPlayerDecks() {
     return playerDecks;
 }
 
-/** 選択されているデッキデータを取得する */
 export function getSelectedDeck() {
     return playerDecks[selectedDeckIndex];
 }
 
-/** 選択されているデッキのインデックスを設定する */
 export function setSelectedDeckIndex(index) {
     selectedDeckIndex = index;
 }
@@ -74,36 +76,57 @@ export function setSelectedDeckIndex(index) {
 
 // --- デッキ選択画面の描画 ---
 
-/** デッキ選択リストをレンダリングする */
+/**
+ * デッキ選択リストをレンダリングする
+ */
 export function renderDeckSelect() {
     $deckListSelect.innerHTML = '';
+    
     playerDecks.forEach((deck, index) => {
-        const deckItem = document.createElement('label');
+        const totalSize = deck.cards.reduce((sum, card) => sum + card.count, 0);
+
+        const deckItem = document.createElement('div');
         deckItem.className = 'deck-item';
         deckItem.innerHTML = `
-            <input type="radio" name="selectedDeck" value="${index}" ${index === selectedDeckIndex ? 'checked' : ''}>
-            <span>${deck.name} (${deck.cards.reduce((sum, card) => sum + card.count, 0)}枚)</span>
+            <div>
+                <input type="radio" id="deck-${index}-select" name="selected-deck" value="${index}" ${index === selectedDeckIndex ? 'checked' : ''}>
+                <label for="deck-${index}-select">${deck.name} (${totalSize}枚)</label>
+            </div>
         `;
         $deckListSelect.appendChild(deckItem);
+    });
+
+    // ラジオボタンの変更イベントを設定
+    $deckListSelect.querySelectorAll('input[name="selected-deck"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            selectedDeckIndex = parseInt(e.target.value);
+        });
     });
 }
 
 
 // --- デッキ管理画面の描画と操作 ---
 
-/** デッキ管理リストをレンダリングする */
+/**
+ * デッキ管理リストをレンダリングする
+ */
 export function renderDeckManagement() {
     $deckListManagement.innerHTML = '';
+
     playerDecks.forEach((deck, index) => {
+        const totalSize = deck.cards.reduce((sum, card) => sum + card.count, 0);
+
         const deckItem = document.createElement('div');
         deckItem.className = 'deck-item';
-        // 🌟 修正: onclick属性を削除し、データ属性を使用してイベントリスナーをmain.jsで一括処理する
+        // data-indexとdata-action属性で、main.js側でイベントをハンドルする
         deckItem.innerHTML = `
-            <span>${deck.name} (${deck.cards.reduce((sum, card) => sum + card.count, 0)}枚)</span>
             <div>
+                <span class="deck-name-display">${deck.name} (${totalSize}枚)</span>
+            </div>
+            <div class="deck-actions">
                 <button data-action="edit" data-index="${index}">編集</button>
-                <button data-action="copy" data-index="${index}">コピー</button>
-                <button data-action="delete" data-index="${index}" ${playerDecks.length === 1 ? 'disabled' : ''}>削除</button>
+                <button data-action="copy" data-index="${index}">複製</button>
+                <button data-action="delete" data-index="${index}">削除</button>
             </div>
         `;
         $deckListManagement.appendChild(deckItem);
@@ -111,67 +134,65 @@ export function renderDeckManagement() {
 }
 
 /**
- * 新しいデッキを作成し、編集画面を開く
+ * 新規デッキを作成する
  */
 export function createNewDeck() {
-    // デフォルトの初期デッキのコピーを作成
     const newDeck = JSON.parse(JSON.stringify(INITIAL_DECK_TEMPLATE));
-    newDeck.name = `新しいデッキ ${playerDecks.length + 1}`;
-
+    newDeck.name = `新規デッキ ${playerDecks.length + 1}`;
     playerDecks.push(newDeck);
     saveDecks();
-
-    // 作成したデッキの編集画面を開く
-    editDeck(playerDecks.length - 1);
     renderDeckManagement();
+    
+    // 新規作成したデッキの編集画面を開く
+    editDeck(playerDecks.length - 1);
 }
 
 /**
- * デッキをコピーする (エクスポート関数)
- * @param {number} index - コピーするデッキのインデックス
+ * 既存デッキをコピーする
+ * @param {number} index - コピー元のデッキのインデックス
  */
 export function copyDeck(index) {
-    const originalDeck = playerDecks[index];
-    const newDeck = JSON.parse(JSON.stringify(originalDeck));
-
-    // デッキ名を「(元のデッキ名) のコピー」とする
-    newDeck.name = `${originalDeck.name} のコピー`;
-
-    // コピーを元のデッキの直後に追加
-    playerDecks.splice(index + 1, 0, newDeck);
+    const copiedDeck = JSON.parse(JSON.stringify(playerDecks[index]));
+    copiedDeck.name = `${copiedDeck.name} のコピー`;
+    playerDecks.push(copiedDeck);
     saveDecks();
     renderDeckManagement();
-    alert(`「${newDeck.name}」を作成しました。`);
 }
 
 /**
- * デッキを削除する (エクスポート関数)
+ * デッキを削除する
  * @param {number} index - 削除するデッキのインデックス
  */
-export function deleteDeck(index) { // 🌟 修正: window.deleteDeck から export function deleteDeck に変更
+export function deleteDeck(index) {
     if (playerDecks.length <= 1) {
         alert("デッキは最低1つ必要です。");
         return;
     }
-    if (confirm(`${playerDecks[index].name} を削除してもよろしいですか？`)) {
+    if (confirm(`${playerDecks[index].name} を削除しますか？`)) {
         playerDecks.splice(index, 1);
-        saveDecks();
+        // 選択中のデッキが削除された場合、インデックスを調整
         if (selectedDeckIndex === index) {
-            selectedDeckIndex = 0; // 選択中のデッキが削除されたらデフォルトに戻す
+            selectedDeckIndex = 0;
         } else if (selectedDeckIndex > index) {
-            selectedDeckIndex--; // インデックスのずれを修正
+            selectedDeckIndex--;
         }
+        saveDecks();
         renderDeckManagement();
+        // デッキ選択画面もリフレッシュ (選択中のデッキが変わる可能性があるため)
+        renderDeckSelect(); 
     }
 }
+
 
 // --- デッキ編集画面の操作 ---
 
 /**
- * デッキ編集画面を開く (エクスポート関数)
+ * デッキ編集画面を開く
  * @param {number} index - 編集するデッキのインデックス
  */
-export function editDeck(index) { // 🌟 修正: window.editDeck から export function editDeck に変更
+export function editDeck(index) {
+    if (index < 0 || index >= playerDecks.length) return;
+
     editingDeckIndex = index;
     // 編集用の一時データを作成 (ディープコピー)
     tempDeck = JSON.parse(JSON.stringify(playerDecks[index].cards));
@@ -180,7 +201,6 @@ export function editDeck(index) { // 🌟 修正: window.editDeck から export 
     $deckEditOverlay.classList.remove('hidden');
 
     renderCardEditList();
-    // showDeckManagementScreen(); // 🌟 削除: main.jsで画面制御を行うため
 }
 
 /**
@@ -188,8 +208,6 @@ export function editDeck(index) { // 🌟 修正: window.editDeck から export 
  */
 function renderCardEditList() {
     $cardEditList.innerHTML = '';
-
-    // ... (カードリストの描画ロジックは変更なし)
 
     // 全カードリストをベースに描画
     ALL_CARDS.forEach(cardData => {
@@ -201,7 +219,7 @@ function renderCardEditList() {
 
         const effectHtml = generateEffectText(cardData); // cards.jsの関数
 
-        // 🌟 修正: onclick属性をデータ属性ベースに変更 (main.jsでイベントリスナーを登録する)
+        // data-action属性で、main.js側でイベントをハンドルする
         listItem.innerHTML = `
             <div class="card-info">
                 <div class="card-title">${cardData.name}</div>
@@ -218,25 +236,29 @@ function renderCardEditList() {
 
     // 現在の合計枚数を更新
     const currentTotalSize = tempDeck.reduce((sum, card) => sum + card.count, 0);
-    $currentDeckSize.textContent = `${currentTotalSize} / ${MAX_DECK_SIZE}`;
+    
+    // 🌟 修正点1: 合計枚数がMAX_DECK_SIZEを超えた場合にクラスを適用する
+    const deckSizeClass = currentTotalSize > MAX_DECK_SIZE ? 'size-over' : (currentTotalSize === MAX_DECK_SIZE ? 'size-ok' : 'size-short');
+    $currentDeckSize.innerHTML = `合計: <span class="${deckSizeClass}">${currentTotalSize}</span> / ${MAX_DECK_SIZE}`;
 
     // 保存ボタンの活性/非活性を制御
+    // 🌟 修正点2: 枚数がMAX_DECK_SIZEと一致しない場合は無効化（オーバー時も含む）
     document.getElementById('save-deck-button').disabled = currentTotalSize !== MAX_DECK_SIZE;
 }
 
 /**
- * カードの枚数を変更する (エクスポート関数)
+ * カードの枚数を変更する
  * @param {string} cardId - 変更対象のカードID
  * @param {number} change - 変更量 (+1 または -1)
  */
-export function changeCardCount(cardId, change) { // 🌟 修正: window.changeCardCount から export function changeCardCount に変更
-    const currentTotalSize = tempDeck.reduce((sum, card) => sum + card.count, 0);
+export function changeCardCount(cardId, change) {
+    
+    // 🌟 修正点3: 最大枚数チェック (MAX_DECK_SIZE) を削除し、制限なく追加できるようにする
 
-    if (change > 0 && currentTotalSize >= MAX_DECK_SIZE) {
-        alert(`デッキの枚数は ${MAX_DECK_SIZE} 枚までです。`);
-        return;
+    if (change < 0 && (tempDeck.find(c => c.id === cardId)?.count || 0) <= 0) {
+        return; // 0枚以下の場合は減らさない
     }
-
+    
     let cardEntry = tempDeck.find(c => c.id === cardId);
 
     if (!cardEntry) {
@@ -263,31 +285,30 @@ export function saveDeckChanges() {
     if (editingDeckIndex === -1) return;
 
     const currentTotalSize = tempDeck.reduce((sum, card) => sum + card.count, 0);
+    // 🌟 修正点4: 保存時は引き続き厳密にMAX_DECK_SIZEであることを要求する
     if (currentTotalSize !== MAX_DECK_SIZE) {
         alert(`デッキの枚数は ${MAX_DECK_SIZE} 枚である必要があります。`);
         return;
     }
 
     // データの更新
-    // 🌟 修正: inputタグから値を取得する
     playerDecks[editingDeckIndex].name = $editDeckName.value.trim() || `名称未設定デッキ ${editingDeckIndex + 1}`;
-    // countが0のカードを削除して保存
-    playerDecks[editingDeckIndex].cards = tempDeck.filter(c => c.count > 0);
-
+    // countが0のカードを除去してから保存
+    playerDecks[editingDeckIndex].cards = tempDeck.filter(c => c.count > 0); 
+    
     saveDecks();
     closeEditScreen();
+    
+    // デッキ管理画面とデッキ選択画面を再描画
     renderDeckManagement();
-
-    alert("デッキが保存されました。");
+    renderDeckSelect();
 }
 
 /**
  * デッキ編集画面を閉じる
  */
 export function closeEditScreen() {
+    $deckEditOverlay.classList.add('hidden');
     editingDeckIndex = -1;
     tempDeck = [];
-    $deckEditOverlay.classList.add('hidden');
-    // デッキ管理画面に戻る
-    document.getElementById('deck-management-screen').classList.remove('hidden');
 }
