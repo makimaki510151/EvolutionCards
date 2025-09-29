@@ -1,5 +1,5 @@
 // カードの基本データ (複数効果、レベル対応)
-const ALL_CARDS = [
+export const ALL_CARDS = [
     // 1. 基本点カード (レベルアップでスコア増加)
     { 
         id: 'score_1', 
@@ -78,7 +78,7 @@ const ALL_CARDS = [
  * @param {object} card - ALL_CARDSからコピーされたカードオブジェクト
  * @returns {string} - 効果テキストのHTML文字列
  */
-function generateEffectText(card) {
+export function generateEffectText(card) {
     const currentLevel = card.evolution || card.baseEvolution || 0;
     
     // 現在の効果テキスト
@@ -105,7 +105,7 @@ function generateEffectText(card) {
  * @param {object} card - 進化させるカードオブジェクト
  * @returns {object} - 進化後のカードオブジェクト
  */
-function applyEvolution(card) {
+export function applyEvolution(card) {
     const MAX_LEVEL = 2; // カードの最大進化レベルを設定
     
     if (card.evolution >= MAX_LEVEL) {
