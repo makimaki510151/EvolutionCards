@@ -570,44 +570,48 @@ button:not(:disabled):hover {
 
 /* --- 📱 スマホ画面対応 (3枚横並び) --- */
 @media (max-width: 992px) {
+
     #game-container,
     .screen {
         /* タブレット・スマホの中間サイズでは最大幅を調整 */
-        max-width: 100%; 
+        max-width: 100%;
         padding: 15px;
     }
-    
+
     .card {
         /* ★ 修正: 画面幅が狭い場合、カードの幅を相対的に広げて3枚並ぶように調整 */
         /* (100% - 2 * gap) / 3 ≈ 33.3% - α */
-        width: calc(33.33% - 15px); /* 3枚並び + ギャップ15px */
+        width: calc(33.33% - 15px);
+        /* 3枚並び + ギャップ15px */
         min-height: 250px;
         padding: 12px;
     }
 
     .card-area {
-        gap: 10px; /* ギャップをさらに狭く */
+        gap: 10px;
+        /* ギャップをさらに狭く */
         padding: 10px;
     }
 }
 
 /* --- 📱 極小画面対応 (2枚以下も自動的に対応) --- */
 @media (max-width: 576px) {
-     .card {
+    .card {
         /* 画面幅が非常に狭い場合は2枚並び (例) */
-        width: calc(50% - 10px); 
+        width: calc(50% - 10px);
         min-height: 220px;
         font-size: 0.9em;
     }
-    
+
     #game-container {
         padding: 10px;
     }
-    
+
     /* カード名や効果文のサイズをさらに調整 */
     .card-name {
         font-size: 1.1em;
     }
+
     .card-effect {
         font-size: 0.85em;
     }
@@ -616,4 +620,51 @@ button:not(:disabled):hover {
     #deck-edit-overlay .screen {
         padding: 20px;
     }
+}
+
+/* カード飛行アニメーションのスタイル */
+@keyframes fly-to-hand {
+    from {
+        opacity: 0.5;
+        left: var(--start-x);
+        top: var(--start-y);
+        transform: scale(0.2) rotate(15deg);
+        filter: brightness(1.5);
+    }
+
+    50% {
+        left: var(--mid-x);
+        top: var(--mid-y);
+        transform: scale(0.5) rotate(-5deg);
+    }
+
+    to {
+        opacity: 1;
+        left: var(--end-x);
+        top: var(--end-y);
+        transform: scale(1) rotate(0deg);
+        filter: brightness(1.0);
+    }
+}
+
+.flying-card {
+    position: fixed;
+    width: 150px;
+    height: 210px;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+    background-color: var(--primary-bg-color);
+    border: 1px solid var(--border-color);
+    pointer-events: none;
+    z-index: 1000;
+    animation: fly-to-hand 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+
+/* ★ 新規: ホバー時にアニメーションがなくても少し浮き上がる演出 (uiRenderer.jsでイベントリスナーを追加済み) */
+.card:hover:not(.evolution-card-wrapper .card) {
+    transform: translateY(-10px) scale(1.05);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
 }

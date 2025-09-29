@@ -1,7 +1,10 @@
 // gameCore.js
 
 import { getSelectedDeck } from './deckManager.js';
-import { updateDisplay, renderHand, showGameOverScreen, showEvolutionScreen } from './uiRenderer.js';
+import {
+    updateDisplay, renderHand, showGameOverScreen, showEvolutionScreen,
+    playDrawSFX, playUseSFX, animateDrawCard, playEvolutionSFX
+} from './uiRenderer.js';
 import { applyEvolution, ALL_CARDS, getCardEffectData, getCardMaxEvolution } from './cards.js';
 
 // --- ゲーム状態の定義 ---
@@ -21,10 +24,7 @@ export let gameState = {
         candidates: []
     },
     masterCardList: [],
-
-    // 次に使用するカードの数値効果に適用される倍率
     nextScoreMultiplier: 1,
-    // 次に使用するカードの使用枚数カウントを無視する回数
     costIgnoreCount: 0
 };
 
@@ -32,6 +32,11 @@ export let gameState = {
 const STORAGE_KEY_HIGH_SCORE = 'roguelite_highscore';
 function saveHighScore() {
     localStorage.setItem(STORAGE_KEY_HIGH_SCORE, gameState.highScore.toString());
+}
+
+function loadHighScore() {
+    const score = localStorage.getItem(STORAGE_KEY_HIGH_SCORE);
+    gameState.highScore = score ? parseInt(score, 10) : 0;
 }
 
 /**
@@ -52,18 +57,14 @@ function setupInitialDeck() {
     const selectedDeck = getSelectedDeck();
     gameState.masterCardList = [];
     selectedDeck.cards.forEach(deckCard => {
-        const baseId = deckCard.id.split('_evo')[0];
-        const cardData = ALL_CARDS.find(c => c.id === baseId);
+        const cardData = ALL_CARDS.find(c => c.id === deckCard.id);
 
         if (cardData) {
             for (let i = 0; i < deckCard.count; i++) {
                 const newCard = JSON.parse(JSON.stringify(cardData));
-                newCard.evolution = newCard.baseEvolution || 0; // baseEvolutionがない場合は0を初期値とする
-
-                // 🌟 修正1: カードインスタンスにベースIDを追加
+                newCard.evolution = newCard.baseEvolution || 0;
                 newCard.baseId = newCard.id;
-
-                newCard.id = `${newCard.id}_inst${i}`;
+                newCard.id = `${newCard.id}_inst${i}_${Math.random()}`; // よりユニークなID
                 gameState.masterCardList.push(newCard);
             }
         }
@@ -77,15 +78,12 @@ function setupInitialDeck() {
  */
 function setupDeckForNewStage() {
     gameState.discard = [];
-    gameState.hand = []; // ステージ開始時は手札をクリア
-    // masterCardListの最新の状態（進化レベル含む）を元に、deckをディープコピーで再構築
+    gameState.hand = [];
     gameState.deck = JSON.parse(JSON.stringify(gameState.masterCardList));
     shuffle(gameState.deck);
-
-    // ステージ開始時のドローは startTurn(5) で行う
 }
 
-export function startGame() {
+export async function startGame() {
     gameState.currentScore = 0;
     gameState.stage = 1;
     gameState.targetScore = 20;
@@ -93,79 +91,48 @@ export function startGame() {
     gameState.evolutionPhase.active = false;
     gameState.nextScoreMultiplier = 1;
     gameState.costIgnoreCount = 0;
+    loadHighScore();
 
     setupInitialDeck();
-    // 🌟 修正: ステージ開始時の特殊ドローを行うため、引数 5 を渡す
-    startTurn(5);
-    updateDisplay();
-}
-
-/**
- * カードを山札から引く
- * @param {number} count - 引く枚数
- */
-export function drawCard(count = 1) {
-    for (let i = 0; i < count; i++) {
-        if (gameState.deck.length === 0) {
-            if (gameState.discard.length > 0) {
-                gameState.deck = gameState.discard;
-                gameState.discard = [];
-                shuffle(gameState.deck);
-            } else {
-                return;
-            }
-        }
-
-        const card = gameState.deck.pop();
-        if (card) {
-            gameState.hand.push(card);
-        }
-    }
-    renderHand();
+    await startTurn(5);
     updateDisplay();
 }
 
 /**
  * ターン開始処理
- * @param {number} [initialDrawCount=0] - ターン開始時に強制的に引く枚数（ステージ1ターン目などに使用）。0の場合は手札を維持し、5枚になるように補充する。
+ * @param {number} [initialDrawCount=0] - ターン開始時に強制的に引く枚数
  */
-export function startTurn(initialDrawCount = 0) {
-
-    // ターン開始時のリセット処理
+export async function startTurn(initialDrawCount = 0) {
     gameState.cardsUsedThisTurn = 0;
-    gameState.nextScoreMultiplier = 1;
-    gameState.costIgnoreCount = 0;
+    // nextScoreMultiplier と costIgnoreCount はターンをまたいで持ち越すためリセットしない
 
     let cardsToDraw = 0;
-
     if (initialDrawCount > 0) {
-        // 1. ステージ1ターン目開始時 (startGame, selectEvolutionCardから呼ばれる): 
-        //    setupDeckForNewStageで手札は空になっているため、強制的に指定枚数(5枚)をドロー
         cardsToDraw = initialDrawCount;
     } else {
-        // 2. 通常のターン開始時 (endTurnから呼ばれる): 
-        //    * 🌟 手札を捨てずに維持する
-        //    * 5枚になるように足りない分だけ引く
-        cardsToDraw = 5 - gameState.hand.length;
+        cardsToDraw = Math.max(0, 5 - gameState.hand.length);
     }
 
     if (cardsToDraw > 0) {
-        drawCard(cardsToDraw);
+        await drawCardsWithAnimation(cardsToDraw);
     }
 
-    document.getElementById('end-turn-button').disabled = true;
+    document.getElementById('end-turn-button').disabled = false;
     updateDisplay();
 }
 
 /**
- * ターン終了処理 (自動進行のみで使用される)
+ * ターン終了処理
  */
-export function endTurn() {
+export async function endTurn() {
     document.getElementById('end-turn-button').disabled = true;
-    // endTurnが呼ばれた時点でステージ達成していないか最終チェック
+    // 手札をすべて捨て札に
+    gameState.discard.push(...gameState.hand);
+    gameState.hand = [];
+    renderHand();
+
     if (!checkStageCompletion()) {
-        // 🌟 修正: 通常のターン開始（手札維持モード）
-        startTurn();
+        await startTurn(0);
     }
 }
 
@@ -175,15 +142,34 @@ export function endTurn() {
  */
 function checkStageCompletion() {
     if (gameState.currentScore >= gameState.targetScore) {
+        // alert(`ステージ${gameState.stage}クリア！目標点 ${gameState.targetScore} を達成しました。進化フェーズへ移行します。`);
 
-        // 🌟 修正1: 軽い演出（アラート）で中断を知らせる
-        alert(`ステージ${gameState.stage}クリア！目標点 ${gameState.targetScore} を達成しました。進化フェーズへ移行します。`);
+        const uniqueCardIds = [...new Set(gameState.masterCardList.map(c => c.baseId))];
+        const evolvableCandidates = [];
 
-        // ターンを強制的に中断し、進化フェーズへ移行
-        const masterListCopy = JSON.parse(JSON.stringify(gameState.masterCardList));
-        shuffle(masterListCopy);
+        for (const baseId of uniqueCardIds) {
+            const cardInfo = ALL_CARDS.find(c => c.id === baseId);
+            if (!cardInfo) continue;
 
-        gameState.evolutionPhase.candidates = masterListCopy.slice(0, 4);
+            const cardMaxEvo = getCardMaxEvolution(cardInfo);
+            const isEvolvable = gameState.masterCardList.some(c =>
+                c.baseId === baseId && (c.evolution || c.baseEvolution || 0) < cardMaxEvo
+            );
+
+            if (isEvolvable) {
+                evolvableCandidates.push(cardInfo);
+            }
+        }
+
+        shuffle(evolvableCandidates);
+        gameState.evolutionPhase.candidates = evolvableCandidates.slice(0, 4);
+
+        if (gameState.evolutionPhase.candidates.length === 0) {
+            // 進化できるカードがもうない場合
+            alert("全てのカードが最大レベルに達しました！");
+            proceedToNextStage();
+            return true;
+        }
 
         gameState.evolutionPhase.active = true;
         gameState.evolutionPhase.count = 3;
@@ -196,122 +182,85 @@ function checkStageCompletion() {
 }
 
 /**
- * カード効果の適用ロジック (🌟 新規追加)
+ * カード効果の適用ロジック
  * @param {object} card - 使用するカードオブジェクト
- * @param {function} shuffle - gameCore.js内で定義されているシャッフル関数
  */
-function applyEffects(card, shuffle) {
+async function applyEffects(card) {
     const currentLevel = card.evolution || card.baseEvolution || 0;
-    // cards.jsから効果データを取得
     const effectData = getCardEffectData(card, currentLevel);
-
-    // PurgeSelfで使用するmasterCardListからの削除用インスタンスID
     const cardInstanceId = card.id;
-
-    // 捨札に送るべきかどうかを判断するためのフラグ (PurgeSelfの場合にfalseにする)
     let shouldDiscard = true;
 
-    effectData.forEach(effect => {
+    for (const effect of effectData) {
         const value = effect.value;
         const type = effect.type;
 
         switch (type) {
             case 'Score':
-                // スコア効果はMultiplierの対象
                 gameState.currentScore += Math.round(value * gameState.nextScoreMultiplier);
-                gameState.nextScoreMultiplier = 1; // 倍率リセット
+                gameState.nextScoreMultiplier = 1;
                 break;
-
             case 'Draw':
-                drawCard(value);
+                await drawCardsWithAnimation(value);
                 break;
-
             case 'Multiplier':
                 gameState.nextScoreMultiplier = value;
                 break;
-
             case 'CostIgnore':
                 gameState.costIgnoreCount += value;
                 break;
-
-            // --- 新規効果ロジック ---
-
             case 'PurgeSelf':
-                // PurgeSelf: masterCardListからこのカードインスタンスを永久に削除
                 gameState.masterCardList = gameState.masterCardList.filter(c => c.id !== cardInstanceId);
-                // スコア効果（purgeScoreとして定義）
                 gameState.currentScore += value;
-                shouldDiscard = false; // このカードは捨て札に行かない
+                shouldDiscard = false;
                 break;
-
             case 'CardUseMod':
-                // CardUseMod: 残り使用回数に加算 (cardsUsedThisTurnを減らす)
                 gameState.cardsUsedThisTurn = Math.max(0, gameState.cardsUsedThisTurn - value);
                 break;
-
             case 'RetrieveDiscard':
-                // RetrieveDiscard: 捨て札からランダムに指定枚数を手札に戻す
                 for (let i = 0; i < value; i++) {
                     if (gameState.discard.length > 0) {
                         const randomIndex = Math.floor(Math.random() * gameState.discard.length);
                         const retrievedCard = gameState.discard.splice(randomIndex, 1)[0];
                         gameState.hand.push(retrievedCard);
-                    } else {
-                        break;
                     }
                 }
+                renderHand();
                 break;
-
             case 'ShuffleDiscard':
-                // ShuffleDiscard: 捨て札を山札に戻してシャッフル
                 if (gameState.discard.length > 0) {
-                    gameState.deck = gameState.deck.concat(gameState.discard);
+                    gameState.deck.push(...gameState.discard);
                     gameState.discard = [];
-                    // shuffleはファイルの冒頭で定義されたローカル関数
                     shuffle(gameState.deck);
                 }
                 break;
-
             case 'DiscardHand':
-                // DiscardHand: 手札からランダムに指定枚数を捨てる (一時しのぎのペナルティなどで使用)
                 for (let i = 0; i < value; i++) {
                     if (gameState.hand.length > 0) {
                         const randomIndex = Math.floor(Math.random() * gameState.hand.length);
                         const discardedCard = gameState.hand.splice(randomIndex, 1)[0];
                         gameState.discard.push(discardedCard);
-                    } else {
-                        break;
                     }
                 }
-                // 手札をレンダリングし直す
                 renderHand();
                 break;
-
             default:
                 console.warn(`Unknown effect type: ${type}`);
         }
-    });
-
+    }
     return shouldDiscard;
 }
 
 /**
- * カード使用処理 (🌟 修正: cardオブジェクトではなくインデックスを受け取るように変更)
- * @param {number} handIndex - 🌟 修正: 使用するカードの手札におけるインデックス
+ * カード使用処理
+ * @param {number} handIndex - 使用するカードの手札におけるインデックス
  */
-export function useCard(handIndex) { // 🌟 修正: card を削除し、index を handIndex にリネーム
+export async function useCard(handIndex) {
     if (gameState.evolutionPhase.active) return;
+    if (handIndex < 0 || handIndex >= gameState.hand.length) return;
 
-    // 🌟 追加: インデックスが不正でないかチェック
-    if (handIndex < 0 || handIndex >= gameState.hand.length) {
-        console.error("無効な手札インデックス:", handIndex);
-        return;
-    }
-
-    // 🌟 追加: 使用するカードインスタンスをインデックスから取得
     const usedCard = gameState.hand[handIndex];
 
-    // 1. コスト計算
     const costIgnored = gameState.costIgnoreCount > 0;
     if (!costIgnored) {
         if (gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
@@ -323,105 +272,124 @@ export function useCard(handIndex) { // 🌟 修正: card を削除し、index �
         gameState.costIgnoreCount--;
     }
 
-    // 2. 手札からカードを削除
-    // DiscardHandの処理があるため、先に削除する
-    // 🌟 修正: usedCard のインデックス (handIndex) を使って正確に削除
     gameState.hand.splice(handIndex, 1);
+    playUseSFX();
 
-    // 3. 効果適用 (shuffle関数はgameCore.jsのローカル関数としてapplyEffectsに渡す)
-    const shouldDiscard = applyEffects(usedCard, shuffle); // 🌟 修正: usedCard を渡す
+    const shouldDiscard = await applyEffects(usedCard);
 
-    // 4. 捨て札へ移動 (PurgeSelf効果でshouldDiscardがfalseになった場合は移動しない)
     if (shouldDiscard) {
-        gameState.discard.push(usedCard); // 🌟 修正: usedCard を捨て札に追加
+        gameState.discard.push(usedCard);
     }
 
-    // 5. ステージ達成チェックと表示更新
-    checkStageCompletion();
     renderHand();
     updateDisplay();
+    checkStageCompletion();
 }
 
 /**
  * 進化画面でカードが選択されたときの処理
  */
-export function selectEvolutionCard(baseCard) {
+export async function selectEvolutionCard(baseCard) {
     if (!gameState.evolutionPhase.active) return;
 
-    const cardBaseInfo = ALL_CARDS.find(c => c.id === baseCard.id);
+    const cardBaseInfo = ALL_CARDS.find(c => c.id === baseCard.baseId);
     if (!cardBaseInfo) return;
 
-    // 🌟 カードごとの最大進化レベルを取得
     const maxEvo = getCardMaxEvolution(cardBaseInfo);
 
-    // 進化可能なカードをマスターリストから検索
-    // c.baseId は、setupInitialDeckでカードインスタンスに付与されている
-    const targetCard = gameState.masterCardList.find(c =>
-        c.baseId === baseCard.id && // ベースIDで検索
-        (c.evolution || c.baseEvolution || 0) < maxEvo // 🌟 MAXレベル未満であることを確認
+    const evolvableInstances = gameState.masterCardList.filter(c =>
+        c.baseId === baseCard.baseId && (c.evolution || c.baseEvolution || 0) < maxEvo
     );
 
-    if (targetCard) {
-        applyEvolution(targetCard);
-    } else {
-        // 進化可能なカードのみが候補に出るため、ここは基本的に実行されないはずだが、念のため。
-        alert(`${baseCard.name} は全て最大レベルです。`);
+    if (evolvableInstances.length === 0) {
+        alert(`${baseCard.name} は全て最大レベルです。別のカードを選びましょう。`);
         return;
     }
+
+    // 最もレベルの低いカードを進化させる
+    evolvableInstances.sort((a, b) => (a.evolution || 0) - (b.evolution || 0));
+    const targetCard = evolvableInstances[0];
+
+    applyEvolution(targetCard);
+    playEvolutionSFX();
 
     gameState.evolutionPhase.count--;
     document.getElementById('evo-count').textContent = gameState.evolutionPhase.count;
 
     if (gameState.evolutionPhase.count > 0) {
-        // 🌟 進化候補リストの生成ロジック
+        checkStageCompletion(); // 候補を再生成して表示
+    } else {
+        await proceedToNextStage();
+    }
+    updateDisplay();
+}
 
-        // masterCardListの中からユニークなカードID(baseId)を取得
-        const uniqueCardIds = [...new Set(gameState.masterCardList.map(c => c.baseId))];
+async function proceedToNextStage() {
+    gameState.evolutionPhase.active = false;
 
-        const evolvableCandidates = [];
-
-        // 進化可能なカードのみを抽出し、シャッフル後のリストから4枚選択
-        for (const baseId of uniqueCardIds) {
-            const cardInfo = ALL_CARDS.find(c => c.id === baseId);
-            if (!cardInfo) continue;
-            const cardMaxEvo = getCardMaxEvolution(cardInfo);
-
-            // masterCardListの中に、まだ最大レベルに達していないこのカードのインスタンスが存在するか確認
-            const isEvolvable = gameState.masterCardList.some(c =>
-                c.baseId === baseId && (c.evolution || c.baseEvolution || 0) < cardMaxEvo
-            );
-
-            if (isEvolvable) {
-                // ALL_CARDSのベース情報を候補として追加
-                evolvableCandidates.push(cardInfo);
-            }
-        }
-
-        // 候補リストをシャッフルして、先頭の4枚を取得
-        shuffle(evolvableCandidates);
-        gameState.evolutionPhase.candidates = evolvableCandidates.slice(0, 4);
-
-        showEvolutionScreen();
+    if (gameState.currentScore > gameState.highScore) {
+        gameState.highScore = gameState.currentScore;
+        saveHighScore();
     }
 
-    updateDisplay();
-    renderHand();
+    gameState.stage++;
+    gameState.targetScore = Math.round(gameState.targetScore * 1.5);
+    gameState.currentScore = 0;
 
-    // 進化回数が0になったら、次のステージへ
-    if (gameState.evolutionPhase.count <= 0) {
-        gameState.evolutionPhase.active = false;
+    setupDeckForNewStage();
+    await startTurn(5);
+}
 
-        // スコア更新（ハイスコア処理など）
-        if (gameState.currentScore > gameState.highScore) {
-            gameState.highScore = gameState.currentScore;
-            saveHighScore();
+/**
+ * 山札からカードを1枚引く内部関数
+ * @returns {object|null} 引いたカードオブジェクト、山札がない場合はnull
+ */
+function internalDrawSingleCard() {
+    if (gameState.deck.length === 0) {
+        if (gameState.discard.length > 0) {
+            gameState.deck.push(...gameState.discard);
+            gameState.discard = [];
+            shuffle(gameState.deck);
+        } else {
+            return null;
         }
+    }
+    const card = gameState.deck.pop();
+    if (card) {
+        gameState.hand.push(card);
+    }
+    return card;
+}
 
-        gameState.stage++;
-        gameState.targetScore += 20; // ターゲットスコアを増加
-        gameState.currentScore = 0; // スコアをリセット
+/**
+ * カードを引くアニメーションと効果音付きの関数
+ * @param {number} count - 引く枚数
+ */
+export async function drawCardsWithAnimation(count) {
+    for (let i = 0; i < count; i++) {
+        // カードを引いて、gameState.handに追加 (この時点で手札の枚数が1増える)
+        const cardToDraw = internalDrawSingleCard();
 
-        setupDeckForNewStage(); // 山札・捨て札を再構築
-        startTurn(5); // 次のステージの最初のドロー (5枚)
+        if (cardToDraw) {
+            // ----------------------------------------------------
+            // 🌟 修正: 引いたカードオブジェクトと最終的な手札インデックスを渡す
+            // ----------------------------------------------------
+            const finalIndex = gameState.hand.length - 1;
+
+            // アニメーション実行 (カードの出現/飛行)
+            // 🌟 修正: cardToDraw と finalIndex を animateDrawCard に渡す
+            await animateDrawCard(cardToDraw, finalIndex);
+
+            // 🌟 修正: アニメーション完了後、手札を再描画して、引いたカードをDOMに表示する
+            renderHand();
+
+            playDrawSFX();
+
+            // 1枚引くごとに山札/捨て札の枚数やターン終了ボタンの状態などを更新
+            updateDisplay();
+            // ----------------------------------------------------
+        } else {
+            break; // 山札切れ
+        }
     }
 }
