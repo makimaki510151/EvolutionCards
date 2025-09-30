@@ -12,6 +12,8 @@ const $useCount = document.getElementById('card-use-count');
 const $deckCount = document.getElementById('deck-count');
 const $discardCount = document.getElementById('discard-count');
 const $overlay = document.getElementById('overlay');
+const $multiplierInfo = document.getElementById('multiplier-info');
+const $nextMultiplierValue = document.getElementById('next-multiplier-value');
 const $evolutionScreen = document.getElementById('evolution-screen');
 const $gameoverScreen = document.getElementById('gameover-screen');
 const $evolutionChoices = document.getElementById('evolution-choices');
@@ -25,11 +27,25 @@ export function updateDisplay() {
     $scoreInfo.textContent = gameState.currentScore;
     $targetScore.textContent = gameState.targetScore;
     $stageInfo.textContent = gameState.stage;
+
     // 🌟 修正: コスト無視中はカード使用回数の表示を調整
     const displayUses = gameState.costIgnoreCount > 0 ? '∞' : (gameState.maxCardUses - gameState.cardsUsedThisTurn);
     $useCount.textContent = displayUses;
+
     $deckCount.textContent = gameState.deck.length;
     $discardCount.textContent = gameState.discard.length;
+
+    // ----------------------------------------
+    // 🌟 追加: 次のカード倍率の表示ロジック
+    // ----------------------------------------
+    if (gameState.nextScoreMultiplier > 1) {
+        // 倍率が1より大きい場合、要素を表示し、値を設定
+        $nextMultiplierValue.textContent = `x${gameState.nextScoreMultiplier}`;
+        $multiplierInfo.classList.remove('hidden');
+    } else {
+        // 倍率が1の場合、要素を非表示にする
+        $multiplierInfo.classList.add('hidden');
+    }
 }
 
 /**

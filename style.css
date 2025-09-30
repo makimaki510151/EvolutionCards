@@ -47,6 +47,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    position: relative;
 }
 
 /* --- ヘッダー/フッター --- */
@@ -247,10 +248,12 @@ button:not(:disabled):hover {
     border: 3px solid var(--accent-color);
     box-shadow: 0 0 20px rgba(0, 188, 212, 0.4);
     /* ★ 修正1: 画面の高さをビューポートに制限し、縦スクロールを有効にする */
-    max-height: 100vh; 
+    max-height: 100vh;
     overflow-y: auto;
-    overflow-x: hidden; /* 横スクロールを禁止 */
-    box-sizing: border-box; /* paddingを含めた高さ計算 */
+    overflow-x: hidden;
+    /* 横スクロールを禁止 */
+    box-sizing: border-box;
+    /* paddingを含めた高さ計算 */
 }
 
 /* --- 🎨 進化画面 (Evolution Screen) 🎨 --- */
@@ -276,7 +279,7 @@ button:not(:disabled):hover {
 
 .evolution-card-wrapper .card {
     width: 100%;
-    min-height: 280px; 
+    min-height: 280px;
     display: flex;
     flex-direction: column;
 }
@@ -590,6 +593,7 @@ button:not(:disabled):hover {
 --- 📱 スマホ縦向き画面対応 (576px以下) ---
 */
 @media (max-width: 576px) {
+
     /* 3枚並びを維持する設定（380px以上576px以下に適用） */
     .card {
         width: calc(33.33% - 7px);
@@ -632,18 +636,21 @@ button:not(:disabled):hover {
         justify-content: space-between;
         padding: 5px 10px;
     }
-    
+
     /* ★ 修正2: ゲーム破棄ボタンを中央寄せにする */
     #quit-game-button {
-        width: 100%; /* 親コンテナの幅全体を確保 */
+        width: 100%;
+        /* 親コンテナの幅全体を確保 */
         margin-right: 0;
         margin-bottom: 5px;
         order: 0;
         /* 中央寄せの実現 */
-        display: block; /* autoマージンを効かせるためブロック要素化 */
+        display: block;
+        /* autoマージンを効かせるためブロック要素化 */
         margin-left: auto;
         margin-right: auto;
-        max-width: 250px; /* ボタンの横幅を適切に制限 */
+        max-width: 250px;
+        /* ボタンの横幅を適切に制限 */
     }
 
     #score-info,
@@ -658,7 +665,7 @@ button:not(:disabled):hover {
     #evolution-choices {
         gap: 15px;
     }
-    
+
     .evolution-card-wrapper .card {
         min-height: 200px;
         font-size: 0.8em;
@@ -670,19 +677,20 @@ button:not(:disabled):hover {
 ★ 2枚並びとヘッダーの縦並びを確実に実現
 */
 @media (max-width: 380px) {
+
     /* 狭い画面でのカードエリアのパディングを最小限に */
     #game-container {
-        padding: 5px; 
+        padding: 5px;
     }
-    
+
     .card-area {
         padding: 5px;
         gap: 5px;
     }
-    
+
     /* 2枚並びのための幅調整 */
     .card {
-        width: calc(50% - 5px); 
+        width: calc(50% - 5px);
         min-height: 140px;
         padding: 4px;
         font-size: 0.7em;
@@ -690,7 +698,7 @@ button:not(:disabled):hover {
 
     /* カード名/効果の相対的な大きさは維持 */
     .card-name {
-        font-size: 1.3em; 
+        font-size: 1.3em;
     }
 
     .card-effect {
@@ -701,7 +709,7 @@ button:not(:disabled):hover {
     #evolution-choices {
         gap: 10px;
     }
-    
+
     .evolution-card-wrapper .card {
         min-height: 180px;
         font-size: 0.75em;
@@ -713,7 +721,7 @@ button:not(:disabled):hover {
     #turn-info {
         font-size: 0.9em;
     }
-    
+
     .game-info-block {
         padding: 3px 5px;
     }
@@ -878,4 +886,40 @@ button:not(:disabled):hover {
 
 #turn-info {
     order: 3;
+}
+
+#multiplier-info {
+    /* 🌟 絶対位置指定に変更 */
+    position: absolute;
+    /* 🌟 手札エリアの近くに配置 (例: 左上の近く) */
+    top: 150px;
+    /* ヘッダーの下、手札エリアの上端付近に調整 */
+    left: 20px;
+    /* 左端から少し離す */
+    z-index: 10;
+    /* 他の要素より手前に表示 */
+
+    /* デザインの調整 (前回の提案のスタイルを調整) */
+    font-size: 1.6em;
+    /* サイズを少し大きく */
+    font-weight: bold;
+    color: var(--warning-color);
+    background-color: var(--primary-bg-color);
+    padding: 8px 15px;
+    border-radius: 8px;
+    border: 3px solid var(--warning-color);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    /* 影をつけて目立たせる */
+    text-align: center;
+}
+
+#multiplier-info.hidden {
+    display: none;
+}
+
+#next-multiplier-value {
+    color: var(--danger-color);
+    font-size: 1.2em;
+    /* 値をさらに強調 */
+    margin-left: 5px;
 }

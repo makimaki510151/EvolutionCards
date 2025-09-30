@@ -159,6 +159,12 @@ export async function endTurn() {
         const isHandEmpty = gameState.hand.length === 0;
         const isStageFailed = gameState.currentScore < gameState.targetScore;
 
+        gameState.nextScoreMultiplier = 1;
+        gameState.costIgnoreCount = 0;
+
+        renderHand();
+        updateDisplay();
+
         // 手札が空（ドローもできず）で、かつステージ未達成ならゲームオーバー
         // 捨て札にカードがあっても、手札がないためシャッフルするカードを使えず、詰みと判断する
         if (isHandEmpty && isStageFailed) {
@@ -206,19 +212,21 @@ async function applyEffects(card) {
     const cardInstanceId = card.id;
     let shouldDiscard = true;
 
-    // 🌟 修正点: 次のカードではなく、このカードの数値効果すべてに適用するように修正
-    let multiplier = gameState.nextScoreMultiplier; // 現在の倍率を取得
-    gameState.nextScoreMultiplier = 1; // 効果適用前に倍率をリセット
+    // 🌟 修正点1: 現在のカードに乗算する倍率を取得
+    let multiplier = gameState.nextScoreMultiplier;
 
     for (const effect of effectData) {
         let value = effect.value;
         const type = effect.type;
 
-        // 🌟 修正点: Score, Draw, CostIgnore, PurgeSelf, CardUseMod, RetrieveDiscard, DiscardHand に倍率を適用
-        const shouldApplyMultiplier = ['Score', 'Draw', 'CostIgnore', 'PurgeSelf', 'CardUseMod', 'RetrieveDiscard', 'DiscardHand'].includes(type);
+        // 🌟 修正点3: 'Multiplier' を含め、倍率を適用する可能性のあるタイプを定義
+        const shouldApplyMultiplier = ['Score', 'Draw', 'CostIgnore', 'PurgeSelf', 'CardUseMod', 'RetrieveDiscard', 'DiscardHand', 'Multiplier'].includes(type);
 
-        if (shouldApplyMultiplier && type !== 'Multiplier' && type !== 'ShuffleDiscard') {
-            value = Math.round(value * multiplier); // 値を倍率で乗算
+        // 🌟 修正点4【バグ修正】: Multiplier効果の値自体が二重に乗算されるのを防ぐため、
+        //                     条件に 'type !== "Multiplier"' を再度追加する
+        if (shouldApplyMultiplier && type !== 'Multiplier' && type !== 'ShuffleDiscard') { // <--- 修正箇所
+            // 【倍率適用】: valueに現在の倍率を乗算 (ScoreやDrawなど)
+            value = Math.round(value * multiplier);
             value = Math.max(0, value); // 負の数値にならないように制限 (例: Draw -1枚など)
         }
 
@@ -232,7 +240,8 @@ async function applyEffects(card) {
                 await drawCardsWithAnimation(value);
                 break;
             case 'Multiplier':
-                // Multiplier効果は倍率を重ねがけし、次回の適用時にリセットされるようにする (上書きではなく乗算)
+                // 🌟 【倍率適用】: valueには既存の倍率が乗算されていない本来の値（例: 2）が入っているため、
+                //               これをそのまま現在の累積倍率に乗算する（3 x 2 = 6）
                 gameState.nextScoreMultiplier *= value;
                 break;
             case 'CostIgnore':
@@ -314,6 +323,11 @@ export async function useCard(handIndex) {
         gameState.discard.push(usedCard);
     }
 
+    if (gameState.currentScore >= gameState.targetScore) {
+        // 🚨 ステージクリア確定時、倍率をリセット！
+        gameState.nextScoreMultiplier = 1;
+    }
+
     renderHand();
     updateDisplay();
 
@@ -329,7 +343,8 @@ export async function useCard(handIndex) {
 
 
     // ターン終了の自動判定ロジック
-    if (gameState.costIgnoreCount === 0 && gameState.cardsUsedThisTurn >= gameState.maxCardUses) {
+    // 🌟 修正: 手札が空の場合 (isHandEmpty)、またはコスト無視がなく使用可能回数に達した場合に endTurn を呼び出す
+    if (isHandEmpty || (gameState.costIgnoreCount === 0 && gameState.cardsUsedThisTurn >= gameState.maxCardUses)) {
         await endTurn();
     } else {
         checkStageCompletion();
