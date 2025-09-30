@@ -7,6 +7,11 @@ import {
 } from './uiRenderer.js';
 import { applyEvolution, ALL_CARDS, getCardEffectData, getCardMaxEvolution, generateEffectText } from './cards.js';
 
+// 🌟 進化時に提示されるカードの枚数 (4から2に変更)
+const EVOLUTION_CHOICE_COUNT = 2;
+// 🌟 進化フェーズでカードを選択できる回数 (3回から1回に変更も検討)
+const EVOLUTION_SELECT_COUNT = 3;
+
 // --- ゲーム状態の定義 ---
 const INITIAL_GAME_STATE_TEMPLATE = {
     deck: [],
@@ -20,7 +25,7 @@ const INITIAL_GAME_STATE_TEMPLATE = {
     highScore: 0,
     evolutionPhase: {
         active: false,
-        count: 3,
+        count: EVOLUTION_SELECT_COUNT,
         candidates: []
     },
     masterCardList: [],
@@ -144,7 +149,7 @@ export async function startTurn(initialDrawCount = 0) {
  * ターン終了処理
  */
 export async function endTurn() {
-    
+
     // ステージ達成チェックを行い、未達成の場合のみ次のターンに進む
     if (!checkStageCompletion()) {
         // 次のターン開始処理を呼び出し、手札が5枚になるまで自動的にドローする
@@ -393,7 +398,7 @@ function generateEvolutionCandidates() {
 
     // 2. 候補リストをシャッフルし、最大4枚を選ぶ
     shuffle(allEvolvableInstances);
-    const selectedInstances = allEvolvableInstances.slice(0, 4);
+    const selectedInstances = allEvolvableInstances.slice(0, EVOLUTION_CHOICE_COUNT);
 
     // 3. 選択されたインスタンスから表示用の候補オブジェクトを作成
     gameState.evolutionPhase.candidates = selectedInstances.map(instance => {
