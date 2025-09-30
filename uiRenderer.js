@@ -11,7 +11,6 @@ const $stageInfo = document.getElementById('current-stage');
 const $useCount = document.getElementById('card-use-count');
 const $deckCount = document.getElementById('deck-count');
 const $discardCount = document.getElementById('discard-count');
-const $endTurnButton = document.getElementById('end-turn-button');
 const $overlay = document.getElementById('overlay');
 const $evolutionScreen = document.getElementById('evolution-screen');
 const $gameoverScreen = document.getElementById('gameover-screen');
@@ -31,9 +30,6 @@ export function updateDisplay() {
     $useCount.textContent = displayUses;
     $deckCount.textContent = gameState.deck.length;
     $discardCount.textContent = gameState.discard.length;
-
-    // ターン終了ボタンの活性化/非活性化 (進化中は非活性)
-    $endTurnButton.disabled = gameState.evolutionPhase.active;
 }
 
 /**

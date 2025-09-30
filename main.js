@@ -125,9 +125,6 @@ function addGlobalEventListeners() {
         }
     });
 
-    // ゲーム画面のターン終了ボタン
-    document.getElementById('end-turn-button').addEventListener('click', endTurn);
-
     // 🌟 変更点3: ゲーム画面のゲーム破棄ボタンのリスナーを追加
     document.getElementById('quit-game-button').addEventListener('click', () => {
         if (confirm('ゲームを破棄してタイトルに戻りますか？現在の進行状況は失われます。')) {

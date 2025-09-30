@@ -114,7 +114,7 @@ export async function startGame() {
     loadHighScore();
 
     setupInitialDeck();
-    await startTurn(5);
+    await startTurn(4);
     updateDisplay();
 }
 
@@ -130,14 +130,13 @@ export async function startTurn(initialDrawCount = 0) {
     if (initialDrawCount > 0) {
         cardsToDraw = initialDrawCount;
     } else {
-        cardsToDraw = Math.max(0, 5 - gameState.hand.length);
+        cardsToDraw = Math.max(0, 4 - gameState.hand.length);
     }
 
     if (cardsToDraw > 0) {
         await drawCardsWithAnimation(cardsToDraw);
     }
 
-    document.getElementById('end-turn-button').disabled = false;
     updateDisplay();
 }
 
@@ -145,8 +144,7 @@ export async function startTurn(initialDrawCount = 0) {
  * ターン終了処理
  */
 export async function endTurn() {
-    document.getElementById('end-turn-button').disabled = true;
-
+    
     // ステージ達成チェックを行い、未達成の場合のみ次のターンに進む
     if (!checkStageCompletion()) {
         // 次のターン開始処理を呼び出し、手札が5枚になるまで自動的にドローする
@@ -438,7 +436,7 @@ async function proceedToNextStage(closeEvolutionScreen = false) {
         }
     }
 
-    await startTurn(5);
+    await startTurn(4);
 }
 
 /**
